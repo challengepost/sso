@@ -1,12 +1,12 @@
 module SSO
   class Token
-    attr_reader :key
+    attr_reader :key, :originator_key, :request_domain, :request_path
 
     # TODO Move to storage (e.g. redis)
-    @@keys = []
+    @@tokens = {}
 
     def self.find(key)
-      @@keys.include?(key) ? new(key) : nil
+      @@tokens[key]
     end
 
     def initialize(existing_key = nil)
@@ -14,8 +14,14 @@ module SSO
 
       unless @key
         @key = ActiveSupport::SecureRandom::hex(50)
-        @@keys << @key
+        @originator_key = ActiveSupport::SecureRandom::hex(50)
+        @@tokens[@key] = self
       end
+    end
+
+    def populate!(request)
+      @request_domain = request.host
+      @request_path = request.fullpath
     end
 
     def ==(token)

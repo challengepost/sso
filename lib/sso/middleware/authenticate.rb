@@ -8,12 +8,22 @@ module SSO
       def call(env)
         request = Rack::Request.new(env)
 
-        if is_bot?(request) || SSO::Token.find(request.session[:sso_token])
-          @app.call(env)
+        case request.path
+        when /^\/sso\/auth/
+          if new_token = SSO::Token.find(request.path.gsub("/sso/auth/", ""))
+            request.session[:sso_token] = new_token.key
+            redirect_to "http://#{new_token.request_domain}#{new_token.request_path}#{new_token.request_path.match(/\?/) ? "&sso=" : "?sso="}#{new_token.key}"
+          else
+            redirect_to request.referrer
+          end
         else
-          response = Rack::Response.new
-          response.redirect "http://centraldomain.com/sso/auth/#{SSO::Token.new.key}"
-          response.finish
+          if is_bot?(request) || SSO::Token.find(request.session[:sso_token])
+            @app.call(env)
+          else
+            token = SSO::Token.new
+            token.populate!(request)
+            redirect_to "http://centraldomain.com/sso/auth/#{token.key}"
+          end
         end
       end
 
@@ -27,6 +37,12 @@ module SSO
       end
       # From Baidu to ZyBord: search engines
       # From UnwindFetchor to Twitmunin: twitter bots and twitter related hits
+
+      def redirect_to(url)
+        response = Rack::Response.new
+        response.redirect(url)
+        response.finish
+      end
     end
   end
 end
