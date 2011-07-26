@@ -10,18 +10,37 @@ module SSO
 
         case request.path
         when /^\/sso\/auth/
-          if new_token = SSO::Token.find(request.path.gsub("/sso/auth/", ""))
-            request.session[:sso_token] = new_token.key
-            redirect_to "http://#{new_token.request_domain}#{new_token.request_path}#{new_token.request_path.match(/\?/) ? "&sso=" : "?sso="}#{new_token.key}"
+          if token = SSO::Token.find(request.path.gsub("/sso/auth/", ""))
+
+            if existing_token = SSO::Token.find(request.session[:sso_token])
+              existing_token.update!(token)
+              token.destroy
+              token = existing_token
+            end
+
+            request.session[:sso_token] = token.key
+            redirect_to "http://#{token.request_domain}#{token.request_path}#{token.request_path.match(/\?/) ? "&sso=" : "?sso="}#{token.key}"
           else
             redirect_to request.referrer
           end
         else
-          if is_bot?(request) || SSO::Token.find(request.session[:sso_token])
+          if request.params['sso']
+            if request.session[:originator_key] && token = SSO::Token.find(request.params['sso'])
+              if request.session[:originator_key] == token.originator_key
+                request.session[:sso_token] = token
+                redirect_to "http://#{token.request_domain}#{token.request_path}"
+              else
+                @app.call(env)
+              end
+            else
+              @app.call(env)
+            end
+          elsif is_bot?(request) || SSO::Token.find(request.session[:sso_token])
             @app.call(env)
           else
             token = SSO::Token.new
             token.populate!(request)
+            request.session[:originator_key] = token.originator_key
             redirect_to "http://centraldomain.com/sso/auth/#{token.key}"
           end
         end

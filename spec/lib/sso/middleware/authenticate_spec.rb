@@ -55,7 +55,7 @@ describe SSO::Middleware::Authenticate do
   describe "Normal request" do
     context "Visitor doesn't have a token on the client domain" do
       it "redirects to the authenticate url on the central domain with a new token" do
-        SSO::Token.should_receive(:new).and_return(mock(:token, :key => "new_token", :populate! => true))
+        SSO::Token.should_receive(:new).and_return(mock(:token, :key => "new_token", :populate! => true, :originator_key => "12345"))
 
         get "/"
 
@@ -86,12 +86,54 @@ describe SSO::Middleware::Authenticate do
 
     context "Visitor has an invalid token" do
       it "redirects to the authenticate url on the central domain with a new token" do
-        SSO::Token.should_receive(:new).and_return(mock(:token, :key => "new_token", :populate! => true))
+        SSO::Token.should_receive(:new).and_return(mock(:token, :key => "new_token", :populate! => true, :originator_key => "12345"))
 
         get "/", {}, { 'rack.session' =>  { :sso_token => 'notarealtoken' } }
 
         last_response.status.should == 302
         last_response.headers["Location"].should == "http://centraldomain.com/sso/auth/new_token"
+      end
+    end
+
+    context "valid sso parameter is present" do
+      it "stores the token in the session" do
+        token = SSO::Token.new
+        @session[:originator_key] = token.originator_key
+        set_cookie @session.to_s
+        get "/?sso=#{token.key}"
+
+        SessionCookie.parse(last_response)["sso_token"].should == token
+      end
+
+      it "redirects back to the same url without the sso parameter" do
+        token = SSO::Token.new
+        token.populate!(mock(:request, :host => "example.com", :fullpath => "/"))
+        @session[:originator_key] = token.originator_key
+        set_cookie @session.to_s
+        get "/?sso=#{token.key}"
+
+        last_response.status.should == 302
+        last_response.headers["Location"].should == "http://example.com/"
+      end
+
+      it "passes through to the app if originator keys don't match" do
+        token = SSO::Token.new
+
+        @session[:originator_key] = "different_originator_key"
+        set_cookie @session.to_s
+        get "/?sso=#{token.key}"
+
+        last_response.status.should == 200
+        last_response.body.should =~ /Ruby on Rails: Welcome aboard/
+      end
+    end
+
+    context "invalid sso parameter is present" do
+      it "passes through to the app" do
+        get "/?sso=notarealtoken"
+
+        last_response.status.should == 200
+        last_response.body.should =~ /Ruby on Rails: Welcome aboard/
       end
     end
   end
@@ -124,10 +166,41 @@ describe SSO::Middleware::Authenticate do
     end
 
     context "Visitor has an existing token on the central domain" do
-      it "updates existing token with data from the new token"
-      it "deletes the new token"
-      it "redirects back to the client domain with the existing token as a parameter"
+      before do
+        @existing_token = SSO::Token.new
+        @existing_token.populate!(mock(:request, :host => "example.com", :fullpath => "/some/path"))
+        @session[:sso_token] = @existing_token.key
+        set_cookie @session.to_s
+      end
+
+      it "updates existing token with data from the new token" do
+        token = SSO::Token.new
+        token.populate!(mock(:request, :host => "anotherexample.com", :fullpath => "/some/other/path"))
+
+        get "/sso/auth/#{token.key}"
+
+        @existing_token.request_domain.should == "anotherexample.com"
+        @existing_token.request_path.should == "/some/other/path"
+      end
+
+      it "deletes the new token" do
+        token = SSO::Token.new
+        token.populate!(mock(:request, :host => "anotherexample.com", :fullpath => "/some/other/path"))
+
+        get "/sso/auth/#{token.key}"
+
+        SSO::Token.find(token.key).should be_false
+      end
+
+      it "redirects back to the client domain with the existing token as a parameter" do
+        token = SSO::Token.new
+        token.populate!(mock(:request, :host => "anotherexample.com", :fullpath => "/some/other/path"))
+
+        get "/sso/auth/#{token.key}"
+
+        last_response.status.should == 302
+        last_response.headers["Location"].should == "http://anotherexample.com/some/other/path?sso=#{@existing_token.key}"
+      end
     end
   end
 end
-

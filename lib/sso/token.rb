@@ -24,6 +24,15 @@ module SSO
       @request_path = request.fullpath
     end
 
+    def update!(token)
+      @request_domain = token.request_domain
+      @request_path = token.request_path
+    end
+
+    def destroy
+      @@tokens[key] = nil
+    end
+
     def ==(token)
       key == token.key
     end
