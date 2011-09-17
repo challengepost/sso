@@ -9,6 +9,12 @@ module SSO
       @@tokens[key]
     end
 
+    def self.new_for(request)
+      new.tap do |token|
+        token.populate!(request)
+      end
+    end
+
     def initialize(existing_key = nil)
       @key = existing_key
 

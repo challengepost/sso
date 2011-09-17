@@ -13,7 +13,9 @@ module SSO
         elsif request.params['sso']
           verify(request, env)
         elsif verified?(request)
-          verified?(request) ? @app.call(env) : redirect_to_central(request, env)
+          @app.call(env)
+        else
+          redirect_to_central(request, env)
         end
       end
 
@@ -52,8 +54,7 @@ module SSO
       end
 
       def redirect_to_central(request, env)
-        token = SSO::Token.new
-        token.populate!(request)
+        token = SSO::Token.new_for(request)
         request.session[:originator_key] = token.originator_key
         redirect_to "http://centraldomain.com/sso/auth/#{token.key}"
       end
