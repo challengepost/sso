@@ -30,7 +30,7 @@ module SSO
       def authenticate(request, env)
         if token = SSO::Token.find(request.path.gsub("/sso/auth/", ""))
           if existing_token = SSO::Token.find(request.session[:sso_token])
-            existing_token.update!(token)
+            existing_token.update(token)
             token.destroy
             token = existing_token
           end
@@ -56,7 +56,7 @@ module SSO
       end
 
       def redirect_to_central(request, env)
-        token = SSO::Token.new_for(request)
+        token = SSO::Token.create(request)
         request.session[:originator_key] = token.originator_key
         redirect_to "http://centraldomain.com/sso/auth/#{token.key}"
       end

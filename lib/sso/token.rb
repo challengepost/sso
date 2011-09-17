@@ -3,6 +3,7 @@ module SSO
     cattr_accessor :current_token
 
     attr_reader :key, :originator_key, :request_domain, :request_path
+    attr_accessor :identity
 
     # TODO Move to storage (e.g. redis)
     @@tokens = {}
@@ -11,30 +12,40 @@ module SSO
       @@tokens[key]
     end
 
-    def self.new_for(request)
-      new.tap do |token|
-        token.populate!(request)
+    def self.create(request)
+      token = new
+      token.populate(request)
+      token.save
+      token
+    end
+
+    def self.identify(id)
+      if current_token
+        current_token.identity = id
+        current_token.save
+      else
+        false
       end
     end
 
-    def initialize(existing_key = nil)
-      @key = existing_key
-
-      unless @key
-        @key = ActiveSupport::SecureRandom::hex(50)
-        @originator_key = ActiveSupport::SecureRandom::hex(50)
-        @@tokens[@key] = self
-      end
+    def initialize
+      @key            = ActiveSupport::SecureRandom::hex(50)
+      @originator_key = ActiveSupport::SecureRandom::hex(50)
     end
 
-    def populate!(request)
+    def save
+      @@tokens[@key] = self
+    end
+
+    def populate(request)
       @request_domain = request.host
-      @request_path = request.fullpath
+      @request_path   = request.fullpath
     end
 
-    def update!(token)
+    def update(token)
       @request_domain = token.request_domain
-      @request_path = token.request_path
+      @request_path   = token.request_path
+      @identity       = token.identity
     end
 
     def destroy

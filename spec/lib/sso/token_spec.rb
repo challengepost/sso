@@ -1,16 +1,57 @@
 require 'spec_helper'
 
 describe SSO::Token do
-  describe ".new_for" do
+  describe ".create" do
     it "creates a new token" do
-      token = SSO::Token.new_for(Rack::Request.new({}))
+      token = SSO::Token.create(Rack::Request.new({}))
       SSO::Token.find(token.key).should_not be_nil
     end
 
-    it "calls populate!" do
+    it "calls populate" do
       mock = mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples")
-      SSO::Token.any_instance.should_receive(:populate!).with(mock)
-      token = SSO::Token.new_for(mock)
+      SSO::Token.any_instance.should_receive(:populate).with(mock)
+      token = SSO::Token.create(mock)
+    end
+  end
+
+  describe ".find" do
+    it "returns nil if key doesn't exist" do
+      SSO::Token.find("notatoken").should be_nil
+    end
+
+    it "returns the token if key exists" do
+      token = SSO::Token.new
+      token.save
+
+      SSO::Token.find(token.key).should == token
+    end
+  end
+
+  describe ".identify" do
+    before do
+      SSO::Token.current_token = SSO::Token.create(mock(:request, :host => "google.com", :fullpath => "/"))
+    end
+
+    it "sets the current token's identity" do
+      SSO::Token.identify(5)
+
+      SSO::Token.current_token.identity.should == 5
+    end
+
+    it "returns true if current token's identity is set" do
+      SSO::Token.identify(5).should be_true
+    end
+
+    it "returns false if there is no current token" do
+      SSO::Token.current_token = nil
+
+      SSO::Token.identify(5).should be_false
+    end
+
+    it "saves the token" do
+      SSO::Token.identify(5)
+
+      SSO::Token.find(SSO::Token.current_token.key).identity.should == 5
     end
   end
 
@@ -18,40 +59,35 @@ describe SSO::Token do
     it "creates a key" do
       SSO::Token.new.key.should_not be_nil
     end
+  end
 
+  describe "#save" do
     it "inserts new token into list" do
       token = SSO::Token.new
+      token.save
       SSO::Token.find(token.key).should_not be_nil
     end
   end
 
-  describe "find" do
-    it "returns nil if key doesn't exist" do
-      SSO::Token.find("notatoken").should be_nil
-    end
-
-    it "returns the token if key exists" do
-      token = SSO::Token.new
-      SSO::Token.find(token.key).should == token
-    end
-  end
-
-  describe "#populate!" do
+  describe "#populate" do
     it "populates based on request" do
       token = SSO::Token.new
-      token.populate!(mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples"))
+      token.populate(mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples"))
       token.request_domain.should == "www.google.com"
       token.request_path.should   == "/search?q=apples"
     end
   end
 
-  describe "#update!" do
+  describe "#update" do
     it "updates to match another token" do
-      token = SSO::Token.new_for(mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples"))
+      token = SSO::Token.create(mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples"))
+      token.identity = 5
+
       new_token = SSO::Token.new
-      new_token.update!(token)
+      new_token.update(token)
       new_token.request_domain.should == "www.google.com"
       new_token.request_path.should   == "/search?q=apples"
+      new_token.identity.should       == 5
     end
   end
 

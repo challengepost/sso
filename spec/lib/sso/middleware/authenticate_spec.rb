@@ -12,7 +12,7 @@ describe SSO::Middleware::Authenticate do
   describe "Normal request" do
     context "Visitor doesn't have a token on the client domain" do
       before do
-        SSO::Token.should_receive(:new_for).and_return(mock(:token, :key => "new_token", :originator_key => "12345"))
+        SSO::Token.should_receive(:create).and_return(mock(:token, :key => "new_token", :originator_key => "12345"))
         get "/"
       end
 
@@ -44,6 +44,7 @@ describe SSO::Middleware::Authenticate do
     context "Visitor has a valid token" do
       before do
         @token = SSO::Token.new
+        @token.save
 
         @session[:sso_token] = @token.key
         set_cookie @session.to_s
@@ -73,7 +74,7 @@ describe SSO::Middleware::Authenticate do
 
     context "Visitor has an invalid token" do
       before do
-        SSO::Token.should_receive(:new_for).and_return(mock(:token, :key => "new_token", :originator_key => "12345"))
+        SSO::Token.should_receive(:create).and_return(mock(:token, :key => "new_token", :originator_key => "12345"))
 
         get "/", {}, { 'rack.session' =>  { :sso_token => 'notarealtoken' } }
       end
@@ -90,7 +91,7 @@ describe SSO::Middleware::Authenticate do
 
     context "valid sso parameter is present" do
       before do
-        @token = SSO::Token.new_for(mock(:request, :host => "example.com", :fullpath => "/"))
+        @token = SSO::Token.create(mock(:request, :host => "example.com", :fullpath => "/"))
         @session[:originator_key] = @token.originator_key
         set_cookie @session.to_s
       end
@@ -151,7 +152,7 @@ describe SSO::Middleware::Authenticate do
   describe "Auth requests" do
     context "token is valid" do
       before do
-        @token = SSO::Token.new_for(mock(:request, :host => "example.com", :fullpath => "/some/path"))
+        @token = SSO::Token.create(mock(:request, :host => "example.com", :fullpath => "/some/path"))
 
         get "/sso/auth/#{@token.key}"
       end
@@ -187,11 +188,11 @@ describe SSO::Middleware::Authenticate do
 
     context "Visitor has an existing token on the central domain" do
       before do
-        @existing_token = SSO::Token.new_for(mock(:request, :host => "example.com", :fullpath => "/some/path"))
+        @existing_token = SSO::Token.create(mock(:request, :host => "example.com", :fullpath => "/some/path"))
         @session[:sso_token] = @existing_token.key
         set_cookie @session.to_s
 
-        @token = SSO::Token.new_for(mock(:request, :host => "anotherexample.com", :fullpath => "/some/other/path"))
+        @token = SSO::Token.create(mock(:request, :host => "anotherexample.com", :fullpath => "/some/other/path"))
         get "/sso/auth/#{@token.key}"
       end
 
