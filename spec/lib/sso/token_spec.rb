@@ -62,4 +62,22 @@ describe SSO::Token do
       SSO::Token.find(token.key).should be_nil
     end
   end
+
+  describe "#==" do
+    before do
+      @token = SSO::Token.new
+    end
+
+    it "returns true if keys match" do
+      @token.should == mock(:token, :key => @token.key)
+    end
+
+    it "returns false if keys are different" do
+      @token.should_not == mock(:token, :key => "different key")
+    end
+
+    it "returns false if other token is nil" do
+      @token.should_not == nil
+    end
+  end
 end

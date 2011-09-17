@@ -1,5 +1,7 @@
 module SSO
   class Token
+    cattr_accessor :current_token
+
     attr_reader :key, :originator_key, :request_domain, :request_path
 
     # TODO Move to storage (e.g. redis)
@@ -40,7 +42,7 @@ module SSO
     end
 
     def ==(token)
-      key == token.key
+      key == token.key if token
     end
   end
 end

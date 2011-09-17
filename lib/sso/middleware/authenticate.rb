@@ -6,6 +6,8 @@ module SSO
       end
 
       def call(env)
+        SSO::Token.current_token = nil
+
         request = Rack::Request.new(env)
 
         if request.path =~ /^\/sso\/auth/
@@ -22,7 +24,7 @@ module SSO
     private
 
       def verified?(request)
-        is_bot?(request) || SSO::Token.find(request.session[:sso_token])
+        is_bot?(request) || SSO::Token.current_token = SSO::Token.find(request.session[:sso_token])
       end
 
       def authenticate(request, env)
