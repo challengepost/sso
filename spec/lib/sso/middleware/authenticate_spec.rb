@@ -61,6 +61,10 @@ describe SSO::Middleware::Authenticate do
         SSO::Token.current_token.should == @token
       end
 
+      it "sets the csrf_token to the token's csrf_token" do
+        SessionCookie.parse(last_response)["_csrf_token"].should == @token.csrf_token
+      end
+
       it "doesn't bleed current_token into the next request" do
         clear_cookies
         @session[:sso_token] = nil
@@ -197,8 +201,8 @@ describe SSO::Middleware::Authenticate do
       end
 
       it "updates existing token with data from the new token" do
-        @existing_token.request_domain.should == "anotherexample.com"
-        @existing_token.request_path.should == "/some/other/path"
+        SSO::Token.find(@existing_token.key).request_domain.should == "anotherexample.com"
+        SSO::Token.find(@existing_token.key).request_path.should == "/some/other/path"
       end
 
       it "deletes the new token" do

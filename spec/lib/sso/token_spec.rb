@@ -59,6 +59,14 @@ describe SSO::Token do
     it "creates a key" do
       SSO::Token.new.key.should_not be_nil
     end
+
+    it "creates an originator_key" do
+      SSO::Token.new.originator_key.should_not be_nil
+    end
+
+    it "creates a csrf_token" do
+      SSO::Token.new.csrf_token.should_not be_nil
+    end
   end
 
   describe "#save" do
@@ -87,6 +95,7 @@ describe SSO::Token do
       new_token.update(token)
       new_token.request_domain.should == "www.google.com"
       new_token.request_path.should   == "/search?q=apples"
+      new_token.csrf_token.should     == token.csrf_token
       new_token.identity.should       == 5
     end
   end
@@ -99,7 +108,7 @@ describe SSO::Token do
     end
   end
 
-  describe "#==" do
+  describe "==" do
     before do
       @token = SSO::Token.new
     end

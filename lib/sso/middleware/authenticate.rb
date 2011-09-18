@@ -15,6 +15,7 @@ module SSO
         elsif request.params['sso']
           verify(request, env)
         elsif verified?(request)
+          request.session[:_csrf_token] = SSO::Token.current_token.csrf_token if SSO::Token.current_token
           @app.call(env)
         else
           redirect_to_central(request, env)

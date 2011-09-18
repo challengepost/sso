@@ -2,14 +2,12 @@ module SSO
   class Token
     cattr_accessor :current_token
 
-    attr_reader :key, :originator_key, :request_domain, :request_path
+    attr_reader :key, :originator_key, :request_domain, :request_path, :csrf_token
     attr_accessor :identity
 
-    # TODO Move to storage (e.g. redis)
-    @@tokens = {}
-
     def self.find(key)
-      @@tokens[key]
+      value = Rails.cache.read(key)
+      new(ActiveSupport::JSON.decode(value)) if value
     end
 
     def self.create(request)
@@ -28,13 +26,17 @@ module SSO
       end
     end
 
-    def initialize
-      @key            = ActiveSupport::SecureRandom::hex(50)
-      @originator_key = ActiveSupport::SecureRandom::hex(50)
+    def initialize(attributes = {})
+      @key            = attributes["key"] || ActiveSupport::SecureRandom::hex(50)
+      @originator_key = attributes["originator_key"] || ActiveSupport::SecureRandom::hex(50)
+      @csrf_token     = attributes["csrf_token"] || ActiveSupport::SecureRandom.base64(32)
+      @request_domain = attributes["request_domain"]
+      @request_path   = attributes["request_path"]
+      @identity       = attributes["identity"]
     end
 
     def save
-      @@tokens[@key] = self
+      Rails.cache.write(@key, to_json)
     end
 
     def populate(request)
@@ -45,15 +47,28 @@ module SSO
     def update(token)
       @request_domain = token.request_domain
       @request_path   = token.request_path
+      @csrf_token     = token.csrf_token
       @identity       = token.identity
+      save
     end
 
     def destroy
-      @@tokens[key] = nil
+      Rails.cache.delete(@key)
     end
 
     def ==(token)
       key == token.key if token
+    end
+
+  private
+
+    def to_json
+      { :key => key,
+        :originator_key => originator_key,
+        :request_domain => request_domain,
+        :request_path => request_path,
+        :csrf_token => csrf_token,
+        :identity => identity }.to_json
     end
   end
 end
