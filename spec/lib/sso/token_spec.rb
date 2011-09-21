@@ -25,6 +25,12 @@ describe SSO::Token do
 
       SSO::Token.find(token.key).should == token
     end
+
+    it "doesn't call the cache if passed a nil key" do
+      Rails.cache.should_not_receive(:read)
+
+      SSO::Token.find(nil)
+    end
   end
 
   describe ".identify" do

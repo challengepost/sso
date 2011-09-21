@@ -5,7 +5,7 @@ class SSO::Token
   attr_accessor :identity
 
   def self.find(key)
-    value = Rails.cache.read(key)
+    value = Rails.cache.read(key) if key
     new(ActiveSupport::JSON.decode(value)) if value
   end
 
