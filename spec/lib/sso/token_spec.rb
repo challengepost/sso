@@ -97,7 +97,6 @@ describe SSO::Token do
       new_token.request_path.should   == "/search?q=apples"
       new_token.originator_key.should == token.originator_key
       new_token.csrf_token.should     == token.csrf_token
-      new_token.identity.should       == 5
     end
   end
 

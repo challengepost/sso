@@ -49,7 +49,6 @@ class SSO::Token
     @request_path   = token.request_path
     @originator_key = token.originator_key
     @csrf_token     = token.csrf_token
-    @identity       = token.identity
     save
   end
 
