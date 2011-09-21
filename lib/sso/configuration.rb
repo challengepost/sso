@@ -1,5 +1,5 @@
 class SSO::Configuration
   include ActiveSupport::Configurable
 
-  config_accessor :skip_paths
+  config_accessor :central_domain, :skip_paths
 end

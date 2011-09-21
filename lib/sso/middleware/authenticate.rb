@@ -63,7 +63,7 @@ private
   def redirect_to_central(request, env)
     token = SSO::Token.create(request)
     request.session[:originator_key] = token.originator_key
-    redirect_to "http://centraldomain.com/sso/auth/#{token.key}"
+    redirect_to "http://#{SSO.config.central_domain}/sso/auth/#{token.key}"
   end
 
   # TODO move to a configuration option
