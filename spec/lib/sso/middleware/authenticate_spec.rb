@@ -1,10 +1,6 @@
 require 'spec_helper'
 
 describe SSO::Middleware::Authenticate do
-  def app
-    Dummy::Application
-  end
-
   before do
     @session = SessionCookie.new
   end
