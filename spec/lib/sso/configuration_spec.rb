@@ -20,6 +20,15 @@ describe SSO do
       last_response.body.should =~ /Ruby on Rails: Welcome aboard/
     end
 
+    it "accepts regex skip_paths that don't match at the root of the path" do
+      SSO.config.skip_paths = [/username$/]
+
+      get "/users/username"
+
+      last_response.status.should == 200
+      last_response.body.should =~ /Ruby on Rails: Welcome aboard/
+    end
+
     it "works if no skip_paths are defined" do
       SSO.config.skip_paths = nil
 

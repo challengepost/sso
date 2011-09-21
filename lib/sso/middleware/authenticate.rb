@@ -25,7 +25,9 @@ class SSO::Middleware::Authenticate
 private
 
   def skip_sso?(path)
-    SSO.config.skip_paths.select{ |p| path.index(p) == 0 }.any?
+    SSO.config.skip_paths.select do |p|
+      p.is_a?(String) ? path == p : path =~ p
+    end.any?
   end
 
   def verified?(request)
