@@ -1,7 +1,7 @@
 class SSO::Token
   cattr_accessor :current_token
 
-  attr_reader :key, :originator_key, :request_domain, :request_path, :csrf_token
+  attr_reader :key, :originator_key, :session, :request_domain, :request_path, :csrf_token
   attr_accessor :identity
 
   def self.find(key)
@@ -32,6 +32,7 @@ class SSO::Token
     @request_domain = attributes["request_domain"]
     @request_path   = attributes["request_path"]
     @identity       = attributes["identity"]
+    @session        = ActiveSupport::JSON.decode(attributes["session"] || "{}")
   end
 
   def save
@@ -67,6 +68,8 @@ private
       :request_domain => request_domain,
       :request_path => request_path,
       :csrf_token => csrf_token,
-      :identity => identity }.to_json
+      :identity => identity,
+      :session => session.to_json
+    }.to_json
   end
 end

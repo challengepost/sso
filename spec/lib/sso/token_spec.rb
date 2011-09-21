@@ -108,6 +108,20 @@ describe SSO::Token do
     end
   end
 
+  describe "#session" do
+    it "defaults to an empty hash" do
+      SSO::Token.new.session.should == {}
+    end
+
+    it "persists sso session data" do
+      token = SSO::Token.new
+      token.session[:isAwesome?] = true
+      token.save
+
+      SSO::Token.find(token.key).session["isAwesome?"].should be_true
+    end
+  end
+
   describe "==" do
     before do
       @token = SSO::Token.new
