@@ -47,6 +47,7 @@ class SSO::Token
   def update(token)
     @request_domain = token.request_domain
     @request_path   = token.request_path
+    @originator_key = token.originator_key
     @csrf_token     = token.csrf_token
     @identity       = token.identity
     save
