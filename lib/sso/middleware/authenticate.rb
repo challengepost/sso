@@ -50,7 +50,7 @@ private
   def verify(request, env)
     if request.session[:originator_key] && token = SSO::Token.find(request.params['sso'])
       if request.session[:originator_key] == token.originator_key
-        request.session[:sso_token] = token
+        request.session[:sso_token] = token.key
         redirect_to "http://#{token.request_domain}#{token.request_path}"
       else
         @app.call(env)

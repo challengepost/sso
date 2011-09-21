@@ -99,7 +99,7 @@ describe SSO::Middleware::Authenticate do
       it "stores the token in the session" do
         get "/?sso=#{@token.key}"
 
-        SessionCookie.parse(last_response)["sso_token"].should == @token
+        SessionCookie.parse(last_response)["sso_token"].should == @token.key
       end
 
       it "redirects back to the same url without the sso parameter" do
