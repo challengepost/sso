@@ -19,5 +19,16 @@ describe SSO do
       last_response.status.should == 200
       last_response.body.should =~ /Ruby on Rails: Welcome aboard/
     end
+
+    it "works if no skip_paths are defined" do
+      SSO.config.skip_paths = nil
+
+      SSO::Token.should_receive(:create).and_return(mock(:token, :key => "new_token", :originator_key => "12345"))
+
+      get "/"
+
+      last_response.status.should == 302
+      last_response.headers["Location"].should == "http://centraldomain.com/sso/auth/new_token"
+    end
   end
 end
