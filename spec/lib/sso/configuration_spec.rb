@@ -1,6 +1,22 @@
 require 'spec_helper'
 
 describe SSO do
+  describe "central_domain" do
+    it "requires a central_domain to be set" do
+      SSO.config.central_domain = nil
+
+      lambda { get "/" }.should raise_error
+    end
+  end
+
+  describe "redis" do
+    it "requires redis to be populated" do
+      SSO.config.redis = nil
+
+      lambda { get "/" }.should raise_error
+    end
+  end
+
   describe "skip_routes" do
     it "doesn't apply SSO paths in skip_paths" do
       SSO.config.skip_paths = ["/passthrough"]

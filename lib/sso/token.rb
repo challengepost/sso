@@ -5,7 +5,7 @@ class SSO::Token
   attr_accessor :identity
 
   def self.find(key)
-    value = Rails.cache.read(key) if key
+    value = SSO.config.redis.get(key)
     new(ActiveSupport::JSON.decode(value)) if value
   end
 
@@ -36,7 +36,8 @@ class SSO::Token
   end
 
   def save
-    Rails.cache.write(@key, to_json)
+    SSO.config.redis.set(@key, to_json)
+    SSO.config.redis.expire(@key, 1_209_600) # 2 weeks
   end
 
   def populate(request)
@@ -53,7 +54,7 @@ class SSO::Token
   end
 
   def destroy
-    Rails.cache.delete(@key)
+    SSO.config.redis.del(@key)
   end
 
   def ==(token)

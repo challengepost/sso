@@ -10,4 +10,9 @@ require 'rack/test'
 RSpec.configure do |config|
   config.include Rack::Test::Methods
   config.include AppHelper
+
+  config.before(:each) do
+    SSO.config.central_domain = "centraldomain.com"
+    SSO.config.redis = $redis
+  end
 end

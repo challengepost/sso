@@ -4,6 +4,8 @@ class SSO::Middleware::Authenticate
   end
 
   def call(env)
+    SSO.config.check_configuration!
+
     SSO::Token.current_token = nil
 
     request = Rack::Request.new(env)
