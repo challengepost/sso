@@ -12,7 +12,18 @@ RSpec.configure do |config|
   config.include AppHelper
 
   config.before(:each) do
+    require 'stringio'
+
+    @log = StringIO.new
+    @logger = Logger.new @log
+
+    ActiveRecord::Base.logger = @logger
+
     SSO.config.central_domain = "centraldomain.com"
     SSO.config.redis = $redis
+  end
+
+  def log
+    @log.string
   end
 end

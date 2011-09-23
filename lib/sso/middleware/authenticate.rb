@@ -16,8 +16,12 @@ class SSO::Middleware::Authenticate
       authenticate(request, env)
     elsif request.params['sso']
       verify(request, env)
+    elsif is_bot?(request)
+      ActiveRecord::Base.logger.info "Request for apparent bot"
+      @app.call(env)
     elsif verified?(request)
-      request.session[:_csrf_token] = SSO::Token.current_token.csrf_token if SSO::Token.current_token
+      ActiveRecord::Base.logger.info "Request for token: #{SSO::Token.current_token.key}"
+      request.session[:_csrf_token] = SSO::Token.current_token.csrf_token
       @app.call(env)
     else
       redirect_to_central(request, env)
@@ -33,12 +37,13 @@ private
   end
 
   def verified?(request)
-    is_bot?(request) || SSO::Token.current_token = SSO::Token.find(request.session[:sso_token])
+    SSO::Token.current_token = SSO::Token.find(request.session[:sso_token])
   end
 
   def authenticate(request, env)
     if token = SSO::Token.find(request.path.gsub("/sso/auth/", ""))
       if existing_token = SSO::Token.find(request.session[:sso_token])
+        ActiveRecord::Base.logger.info "Existing token found: #{existing_token.key}"
         existing_token.update(token)
         token.destroy
         token = existing_token
@@ -47,19 +52,28 @@ private
       request.session[:sso_token] = token.key
       redirect_to "http://#{token.request_domain}#{token.request_path}#{token.request_path.match(/\?/) ? "&sso=" : "?sso="}#{token.key}"
     else
+      ActiveRecord::Base.logger.info "Invalid token while authenticating"
       redirect_to request.referrer
     end
   end
 
   def verify(request, env)
-    if request.session[:originator_key] && token = SSO::Token.find(request.params['sso'])
-      if request.session[:originator_key] == token.originator_key
-        request.session[:sso_token] = token.key
-        redirect_to "http://#{token.request_domain}#{token.request_path}"
+    if token = SSO::Token.find(request.params['sso'])
+      if request.session[:originator_key]
+        if request.session[:originator_key] == token.originator_key
+          ActiveRecord::Base.logger.info "Setting session token: #{token.key}"
+          request.session[:sso_token] = token.key
+          redirect_to "http://#{token.request_domain}#{token.request_path}"
+        else
+          ActiveRecord::Base.logger.warn "Originator key didn't match while verifying token: #{token.key}"
+          @app.call(env)
+        end
       else
+        ActiveRecord::Base.logger.warn "No session originator key found while verifying token: #{token.key}"
         @app.call(env)
       end
     else
+      ActiveRecord::Base.logger.warn "Invalid token while attempting to verify: #{request.params['sso']}"
       @app.call(env)
     end
   end

@@ -35,6 +35,10 @@ describe SSO::Middleware::Authenticate do
       it "doesn't set current_token" do
         SSO::Token.current_token.should be_nil
       end
+
+      it "logs to the Rails.logger" do
+        log.should include("Request for apparent bot")
+      end
     end
 
     context "Visitor has a valid token" do
@@ -59,6 +63,10 @@ describe SSO::Middleware::Authenticate do
 
       it "sets the csrf_token to the token's csrf_token" do
         SessionCookie.parse(last_response)["_csrf_token"].should == @token.csrf_token
+      end
+
+      it "logs to the Rails.logger" do
+        log.should include("Request for token: #{@token.key}")
       end
 
       it "doesn't bleed current_token into the next request" do
@@ -115,6 +123,12 @@ describe SSO::Middleware::Authenticate do
         SSO::Token.current_token.should be_nil
       end
 
+      it "logs to the Rails.logger" do
+        get "/?sso=#{@token.key}"
+
+        log.should include("Setting session token: #{@token.key}")
+      end
+
       context "originator keys don't match" do
         before do
           @session[:originator_key] = "different_originator_key"
@@ -129,6 +143,10 @@ describe SSO::Middleware::Authenticate do
 
         it "doesn't set current_token" do
           SSO::Token.current_token.should be_nil
+        end
+
+        it "logs to the Rails.logger" do
+          log.should include("Originator key didn't match while verifying token: #{@token.key}")
         end
       end
     end
@@ -145,6 +163,10 @@ describe SSO::Middleware::Authenticate do
 
       it "doesn't set current_token" do
         SSO::Token.current_token.should be_nil
+      end
+
+      it "logs to the Rails.logger" do
+        log.should include("Invalid token while attempting to verify: notarealtoken")
       end
     end
   end
@@ -184,6 +206,10 @@ describe SSO::Middleware::Authenticate do
       it "doesn't set current_token" do
         SSO::Token.current_token.should be_nil
       end
+
+      it "logs to the Rails.logger" do
+        log.should include("Invalid token while authenticating")
+      end
     end
 
     context "Visitor has an existing token on the central domain" do
@@ -212,6 +238,10 @@ describe SSO::Middleware::Authenticate do
 
       it "doesn't set current_token" do
         SSO::Token.current_token.should be_nil
+      end
+
+      it "logs to the Rails.logger" do
+        log.should include("Existing token found: #{@existing_token.key}")
       end
     end
   end
