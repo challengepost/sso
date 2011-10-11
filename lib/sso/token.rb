@@ -26,9 +26,9 @@ class SSO::Token
   end
 
   def initialize(attributes = {})
-    @key            = attributes["key"] || ActiveSupport::SecureRandom::hex(50)
-    @originator_key = attributes["originator_key"] || ActiveSupport::SecureRandom::hex(50)
-    @csrf_token     = attributes["csrf_token"] || ActiveSupport::SecureRandom.base64(32)
+    @key            = attributes["key"] || SecureRandom::hex(50)
+    @originator_key = attributes["originator_key"] || SecureRandom::hex(50)
+    @csrf_token     = attributes["csrf_token"] || SecureRandom.base64(32)
     @request_domain = attributes["request_domain"]
     @request_path   = attributes["request_path"]
     @identity       = attributes["identity"]
