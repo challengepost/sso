@@ -27,7 +27,7 @@ class SessionCookie
     env.merge!(DEFAULT_ENV)
 
     @cookie_store = ActionDispatch::Session::CookieStore.new Dummy::Application
-    @session_hash  = ActionDispatch::Session::AbstractStore::SessionHash.new cookie_store, env
+    @session_hash  = Rack::Session::Abstract::SessionHash.new cookie_store, env
     @request = ActionDispatch::Request.new(env)
   end
 
