@@ -6,7 +6,7 @@ class SSO::Token
 
   def self.find(key)
     value = SSO.config.redis.get(key)
-    new(ActiveSupport::JSON.decode(value)) if value
+    new(ActiveSupport::JSON.decode(value.to_s)) if value
   end
 
   def self.create(request)
