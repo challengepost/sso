@@ -1,3 +1,5 @@
+require 'securerandom'
+
 class SSO::Token
   cattr_accessor :current_token
 
