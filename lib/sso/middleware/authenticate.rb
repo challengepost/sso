@@ -42,11 +42,15 @@ private
 
   def authenticate(request, env)
     if token = SSO::Token.find(request.path.gsub("/sso/auth/", ""))
+      ActiveRecord::Base.logger.info "Authenticating session for central domain: #{request.session[:sso_token]}"
       if existing_token = SSO::Token.find(request.session[:sso_token])
         ActiveRecord::Base.logger.info "Existing token found: #{existing_token.key}"
         existing_token.update(token)
         token.destroy
         token = existing_token
+        ActiveRecord::Base.logger.info "Existing token updated: #{existing_token.inspect}"
+      else
+        ActiveRecord::Base.logger.info "Existing token not found."
       end
 
       request.session[:sso_token] = token.key
