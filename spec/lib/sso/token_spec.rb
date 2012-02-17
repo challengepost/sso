@@ -69,10 +69,6 @@ describe SSO::Token do
     it "creates an originator_key" do
       SSO::Token.new.originator_key.should_not be_nil
     end
-
-    it "creates a csrf_token" do
-      SSO::Token.new.csrf_token.should_not be_nil
-    end
   end
 
   describe "#save" do
@@ -102,7 +98,6 @@ describe SSO::Token do
       new_token.request_domain.should == "www.google.com"
       new_token.request_path.should   == "/search?q=apples"
       new_token.originator_key.should == token.originator_key
-      new_token.csrf_token.should     == token.csrf_token
     end
   end
 

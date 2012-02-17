@@ -3,7 +3,7 @@ require 'securerandom'
 class SSO::Token
   cattr_accessor :current_token
 
-  attr_reader :key, :originator_key, :session, :request_domain, :request_path, :csrf_token
+  attr_reader :key, :originator_key, :session, :request_domain, :request_path
   attr_accessor :identity
 
   def self.find(key)
@@ -30,7 +30,6 @@ class SSO::Token
   def initialize(attributes = {})
     @key            = attributes["key"] || SecureRandom::hex(50)
     @originator_key = attributes["originator_key"] || SecureRandom::hex(50)
-    @csrf_token     = attributes["csrf_token"] || SecureRandom.base64(32)
     @request_domain = attributes["request_domain"]
     @request_path   = attributes["request_path"]
     @identity       = attributes["identity"]
@@ -51,7 +50,6 @@ class SSO::Token
     @request_domain = token.request_domain
     @request_path   = token.request_path
     @originator_key = token.originator_key
-    @csrf_token     = token.csrf_token
     save
   end
 
@@ -70,7 +68,6 @@ private
       :originator_key => originator_key,
       :request_domain => request_domain,
       :request_path => request_path,
-      :csrf_token => csrf_token,
       :identity => identity,
       :session => session.to_json
     }.to_json

@@ -21,7 +21,6 @@ class SSO::Middleware::Authenticate
       @app.call(env)
     elsif verified?(request)
       ActiveRecord::Base.logger.info "Request for token: #{SSO::Token.current_token.key}"
-      request.session[:_csrf_token] = SSO::Token.current_token.csrf_token
       @app.call(env)
     else
       redirect_to_central(request, env)

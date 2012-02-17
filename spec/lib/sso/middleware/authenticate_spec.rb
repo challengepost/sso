@@ -61,10 +61,6 @@ describe SSO::Middleware::Authenticate do
         SSO::Token.current_token.should == @token
       end
 
-      it "sets the csrf_token to the token's csrf_token" do
-        SessionCookie.parse(last_response)["_csrf_token"].should == @token.csrf_token
-      end
-
       it "logs to the Rails.logger" do
         log.should include("Request for token: #{@token.key}")
       end
