@@ -1,11 +1,11 @@
 {
   "built_on": "master",
-  "duration": 4.88,
-  "full_display_name": "sso #32",
-  "id": "2012-04-26_23-30-35",
-  "number": 32,
+  "duration": 4.004,
+  "full_display_name": "sso #33",
+  "id": "2012-04-26_23-36-20",
+  "number": 33,
   "result": "SUCCESS",
   "status_message": "?",
-  "time": "2012-04-26 23:30:35 -0400",
-  "url": "job/sso/32/"
+  "time": "2012-04-26 23:36:20 -0400",
+  "url": "job/sso/33/"
 }
