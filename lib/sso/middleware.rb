@@ -1,5 +1,5 @@
 module SSO::Middleware
   extend ActiveSupport::Autoload
 
-  autoload :Authenticate
+  autoload :Authentication
 end

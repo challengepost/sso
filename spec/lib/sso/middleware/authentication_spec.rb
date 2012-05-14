@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe SSO::Middleware::Authenticate do
+describe SSO::Middleware::Authentication do
   before do
     @session = SessionCookie.new
   end
@@ -8,7 +8,8 @@ describe SSO::Middleware::Authenticate do
   describe "Normal request" do
     context "Visitor doesn't have a token on the client domain" do
       before do
-        SSO::Token.should_receive(:create).and_return(mock(:token, :key => "new_token", :originator_key => "12345"))
+        valid_token = mock(:token, :key => "new_token", :originator_key => "12345")
+        SSO::Token.stub!(:create).and_return(valid_token)
         get "/"
       end
 
