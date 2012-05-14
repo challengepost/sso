@@ -146,6 +146,27 @@ describe SSO::Middleware::Authentication do
           log.should include("Originator key didn't match while verifying token: #{@token.key}")
         end
       end
+
+      context "missing originator key" do
+        before do
+          @session[:originator_key] = nil
+          set_cookie @session.to_s
+          get "/?sso=#{@token.key}"
+        end
+
+        it "passes through to the app" do
+          last_response.status.should == 200
+          last_response.body.should =~ /Ruby on Rails: Welcome aboard/
+        end
+
+        it "doesn't set current_token" do
+          SSO::Token.current_token.should be_nil
+        end
+
+        it "logs to the Rails.logger" do
+          log.should include("No session originator key found while verifying token: #{@token.key}")
+        end
+      end
     end
 
     context "invalid sso parameter is present" do
