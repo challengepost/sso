@@ -48,7 +48,7 @@ describe SSO do
     it "works if no skip_paths are defined" do
       SSO.config.skip_paths = nil
 
-      SSO::Token.should_receive(:create).and_return(mock(:token, :key => "new_token", :originator_key => "12345"))
+      SSO::Token.should_receive(:create).and_return(mock(:token, key: "new_token", originator_key: "12345"))
 
       get "/"
 

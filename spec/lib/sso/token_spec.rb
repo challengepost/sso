@@ -8,7 +8,7 @@ describe SSO::Token do
     end
 
     it "calls populate" do
-      mock = mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples")
+      mock = mock(:request, host: "www.google.com", fullpath: "/search?q=apples")
       SSO::Token.any_instance.should_receive(:populate).with(mock)
       token = SSO::Token.create(mock)
     end
@@ -35,7 +35,7 @@ describe SSO::Token do
 
   describe ".identify" do
     before do
-      SSO::Token.current_token = SSO::Token.create(mock(:request, :host => "google.com", :fullpath => "/"))
+      SSO::Token.current_token = SSO::Token.create(mock(:request, host: "google.com", fullpath: "/"))
     end
 
     it "sets the current token's identity" do
@@ -82,7 +82,7 @@ describe SSO::Token do
   describe "#populate" do
     it "populates based on request" do
       token = SSO::Token.new
-      token.populate(mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples"))
+      token.populate(mock(:request, host: "www.google.com", fullpath: "/search?q=apples"))
       token.request_domain.should == "www.google.com"
       token.request_path.should   == "/search?q=apples"
     end
@@ -90,7 +90,7 @@ describe SSO::Token do
 
   describe "#update" do
     it "updates to match another token" do
-      token = SSO::Token.create(mock(:request, :host => "www.google.com", :fullpath => "/search?q=apples"))
+      token = SSO::Token.create(mock(:request, host: "www.google.com", fullpath: "/search?q=apples"))
       token.identity = 5
 
       new_token = SSO::Token.new
@@ -129,11 +129,11 @@ describe SSO::Token do
     end
 
     it "returns true if keys match" do
-      @token.should == mock(:token, :key => @token.key)
+      @token.should == mock(:token, key: @token.key)
     end
 
     it "returns false if keys are different" do
-      @token.should_not == mock(:token, :key => "different key")
+      @token.should_not == mock(:token, key: "different key")
     end
 
     it "returns false if other token is nil" do

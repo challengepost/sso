@@ -36,7 +36,7 @@ class SessionCookie
   end
 
   def signed_session_value
-    request.cookie_jar.signed[SESSION_KEY] = {:value => session_hash.to_hash}
+    request.cookie_jar.signed[SESSION_KEY] = {value: session_hash.to_hash}
     Rack::Utils.escape(request.cookie_jar[SESSION_KEY])
   end
 end

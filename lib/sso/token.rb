@@ -64,12 +64,12 @@ class SSO::Token
 private
 
   def to_json
-    { :key => key,
-      :originator_key => originator_key,
-      :request_domain => request_domain,
-      :request_path => request_path,
-      :identity => identity,
-      :session => session.to_json
+    { key: key,
+      originator_key: originator_key,
+      request_domain: request_domain,
+      request_path: request_path,
+      identity: identity,
+      session: session.to_json
     }.to_json
   end
 end
