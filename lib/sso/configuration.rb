@@ -7,7 +7,7 @@ class SSO::Configuration
   # http://gurge.com/blog/2007/01/08/turn-off-rails-sessions-for-robots/
   # From Baidu to ZyBord: search engines
   # From UnwindFetchor to Twitmunin: twitter bots and twitter related hits
-  DEFAULT_ROBOTS = /\b(Baidu|Gigabot|Googlebot|libwww-perl|lwp-trivial|msnbot|SiteUptime|Slurp|WordPress|ZIBB|ZyBorg|UnwindFetchor|TweetmemeBot|Voyager|yahoo\.com|Birubot|MetaURI|Twitterbot|PycURL|PostRank|Twitmunin)\b/i
+  DEFAULT_ROBOTS = /\b(facebookexternalhit|Baidu|Gigabot|Googlebot|libwww-perl|lwp-trivial|msnbot|SiteUptime|Slurp|WordPress|ZIBB|ZyBorg|UnwindFetchor|TweetmemeBot|Voyager|yahoo\.com|Birubot|MetaURI|Twitterbot|PycURL|PostRank|Twitmunin)\b/i
 
   def check_configuration!
     raise "You must specify SSO.config.redis"          if SSO.config.redis.nil?
