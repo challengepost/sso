@@ -58,7 +58,7 @@ class SSO::Token
   end
 
   def ==(token)
-    key == token.key if token
+    token && key == token.key && token.is_a?(SSO::Token)
   end
 
 private

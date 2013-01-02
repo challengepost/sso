@@ -129,15 +129,19 @@ describe SSO::Token do
     end
 
     it "returns true if keys match" do
-      @token.should == mock(:token, key: @token.key)
+      @token.should == SSO::Token.new("key" => @token.key)
     end
 
     it "returns false if keys are different" do
-      @token.should_not == mock(:token, key: "different key")
+      @token.should_not == SSO::Token.new("key" => "different key")
     end
 
     it "returns false if other token is nil" do
       @token.should_not == nil
+    end
+
+    it "returns false if not a token" do
+      @token.should_not == mock(:token, key: @token.key)
     end
   end
 end
