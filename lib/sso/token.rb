@@ -7,7 +7,7 @@ class SSO::Token
   attr_accessor :identity
 
   def self.find(key)
-    value = SSO.config.redis.get(key)
+    value = redis.get(key)
     new(ActiveSupport::JSON.decode(value.to_s)) if value
   end
 
@@ -27,6 +27,10 @@ class SSO::Token
     end
   end
 
+  def self.redis
+    SSO.config.redis
+  end
+
   def initialize(attributes = {})
     @key            = attributes["key"] || SecureRandom::hex(50)
     @originator_key = attributes["originator_key"] || SecureRandom::hex(50)
@@ -37,8 +41,8 @@ class SSO::Token
   end
 
   def save
-    SSO.config.redis.set(@key, to_json)
-    SSO.config.redis.expire(@key, 1_209_600) # 2 weeks
+    redis.set(@key, to_json)
+    redis.expire(@key, 1_209_600) # 2 weeks
   end
 
   def populate(request)
@@ -54,7 +58,7 @@ class SSO::Token
   end
 
   def destroy
-    SSO.config.redis.del(@key)
+    redis.del(@key)
   end
 
   def ==(token)
@@ -71,5 +75,9 @@ private
       identity: identity,
       session: session.to_json
     }.to_json
+  end
+
+  def redis
+    self.class.redis
   end
 end
