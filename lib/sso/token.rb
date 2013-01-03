@@ -9,8 +9,7 @@ class SSO::Token
   attr_accessor :identity, :previous_identity
 
   def self.find(key)
-    value = redis.get(key)
-    new(ActiveSupport::JSON.decode(value.to_s)) if value
+    load(redis.get(key))
   end
 
   def self.create(request)
@@ -49,12 +48,20 @@ class SSO::Token
   #
   # Returns Array.
   def self.find_by_identity(identity)
-    possible_tokens = IdentityHistory.sso_keys(identity).map { |key| find(key) }.compact
+    possible_keys = IdentityHistory.sso_keys(identity)
+    return [] if possible_keys.empty?
+
+    possible_tokens = redis.mget(*possible_keys).map { |value| load(value) }.compact
     possible_tokens.select { |token| token.identity == identity }
   end
 
   def self.redis
     SSO.config.redis
+  end
+
+  def self.load(redis_value = nil)
+    return nil if redis_value.nil?
+    new(ActiveSupport::JSON.decode(redis_value.to_s))
   end
 
   def initialize(attributes = {})
@@ -91,11 +98,6 @@ class SSO::Token
 
   def ==(token)
     token && key == token.key && token.is_a?(SSO::Token)
-  end
-
-  def identity=(id)
-    @previous_identity = @identity
-    @identity = id
   end
 
   def identity_history
