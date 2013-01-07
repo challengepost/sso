@@ -1,6 +1,10 @@
 require 'spec_helper'
 
 describe SSO::Token do
+  before :each do
+    SSO::Token.current_token = nil
+  end
+
   describe ".create" do
     it "creates a new token" do
       token = SSO::Token.create(Rack::Request.new({}))
@@ -58,6 +62,42 @@ describe SSO::Token do
       SSO::Token.identify(5)
 
       SSO::Token.find(SSO::Token.current_token.key).identity.should == 5
+    end
+  end
+
+  describe ".find_by_identity" do
+    before(:each) do
+      SSO.config.redis.del("sso:identity:123")
+    end
+
+    let(:token) { SSO::Token.new }
+
+    it "returns empty array if no existing tokens associated with id" do
+      SSO::Token.find_by_identity(123).should be_empty
+    end
+
+    it "returns empty array if associated token(s) expired" do
+      SSO::Token.current_token = token
+      SSO::Token.identify(123)
+      token.destroy
+
+      SSO::Token.find_by_identity(123).should be_empty
+    end
+
+    it "returns existing associated tokens" do
+      SSO::Token.current_token = token
+      SSO::Token.identify(123)
+
+      SSO::Token.find_by_identity(123).should eq([token])
+    end
+
+    it "returns empty if previously associated token gets re-identified" do
+      SSO::Token.current_token = token
+      SSO::Token.identify(123)
+      SSO::Token.identify(456)
+
+      SSO::Token.find_by_identity(456).should eq([token])
+      SSO::Token.find_by_identity(123).should be_empty
     end
   end
 
@@ -129,15 +169,19 @@ describe SSO::Token do
     end
 
     it "returns true if keys match" do
-      @token.should == mock(:token, key: @token.key)
+      @token.should == SSO::Token.new("key" => @token.key)
     end
 
     it "returns false if keys are different" do
-      @token.should_not == mock(:token, key: "different key")
+      @token.should_not == SSO::Token.new("key" => "different key")
     end
 
     it "returns false if other token is nil" do
       @token.should_not == nil
+    end
+
+    it "returns false if not a token" do
+      @token.should_not == mock(:token, key: @token.key)
     end
   end
 end

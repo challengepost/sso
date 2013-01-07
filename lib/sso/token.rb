@@ -1,14 +1,15 @@
 require 'securerandom'
 
 class SSO::Token
+  EXPIRES_IN = 1_209_600 # 2 weeks
+
   cattr_accessor :current_token
 
   attr_reader :key, :originator_key, :session, :request_domain, :request_path
-  attr_accessor :identity
+  attr_accessor :identity, :previous_identity
 
   def self.find(key)
-    value = SSO.config.redis.get(key)
-    new(ActiveSupport::JSON.decode(value.to_s)) if value
+    load(redis.get(key))
   end
 
   def self.create(request)
@@ -18,13 +19,49 @@ class SSO::Token
     token
   end
 
-  def self.identify(id)
+  # Public: Associate and save a user id with the current sso token.
+  #
+  # identity  - The Integer id to be save.
+  #
+  # Examples
+  #
+  #   SSO::Token.identify(123)
+  #   # => <SSO::Token>
+  #
+  # Returns the current token if successful.
+  def self.identify(identity)
     if current_token
-      current_token.identity = id
+      current_token.identity = identity
       current_token.save
+      current_token
     else
       false
     end
+  end
+
+  # Public: Return existing tokens matching given identity.
+  #
+  # Examples
+  #
+  #   SSO::Token.find_by_identity(id)
+  #   # => [<SSO::Token...>, <SSO::Token...>]
+  #
+  # Returns Array.
+  def self.find_by_identity(identity)
+    possible_keys = IdentityHistory.sso_keys(identity)
+    return [] if possible_keys.empty?
+
+    possible_tokens = redis.mget(*possible_keys).map { |value| load(value) }.compact
+    possible_tokens.select { |token| token.identity == identity }
+  end
+
+  def self.redis
+    SSO.config.redis
+  end
+
+  def self.load(redis_value = nil)
+    return nil if redis_value.nil?
+    new(ActiveSupport::JSON.decode(redis_value.to_s))
   end
 
   def initialize(attributes = {})
@@ -37,8 +74,10 @@ class SSO::Token
   end
 
   def save
-    SSO.config.redis.set(@key, to_json)
-    SSO.config.redis.expire(@key, 1_209_600) # 2 weeks
+    identity_history.save(self)
+
+    redis.set(@key, to_json)
+    redis.expire(@key, EXPIRES_IN)
   end
 
   def populate(request)
@@ -54,11 +93,15 @@ class SSO::Token
   end
 
   def destroy
-    SSO.config.redis.del(@key)
+    redis.del(@key)
   end
 
   def ==(token)
-    key == token.key if token
+    token && key == token.key && token.is_a?(SSO::Token)
+  end
+
+  def identity_history
+    IdentityHistory.new(@identity)
   end
 
 private
@@ -72,4 +115,48 @@ private
       session: session.to_json
     }.to_json
   end
+
+  def redis
+    self.class.redis
+  end
+
+  # Public: Store sso keys for a given identity in redis set
+  #
+  class IdentityHistory
+    def self.redis
+      SSO.config.redis
+    end
+
+    def self.sso_keys(identity)
+      redis.smembers(redis_key(identity))
+    end
+
+    def self.redis_key(identity)
+      "sso:identity:#{identity}"
+    end
+
+    attr_reader :identity
+
+    def initialize(identity)
+      @identity = identity
+    end
+
+    def save(token)
+      return false unless identity
+
+      redis.sadd(redis_key, token.key)
+      redis.expire(@key, EXPIRES_IN)
+    end
+
+    private
+
+    def redis
+      self.class.redis
+    end
+
+    def redis_key
+      self.class.redis_key(identity)
+    end
+  end
+
 end
