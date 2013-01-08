@@ -5,7 +5,7 @@ describe SSO::Token do
     SSO::Token.current_token = nil
   end
 
-  describe ".create" do
+  describe "self.create" do
     it "creates a new token" do
       token = SSO::Token.create(Rack::Request.new({}))
       SSO::Token.find(token.key).should_not be_nil
@@ -18,7 +18,7 @@ describe SSO::Token do
     end
   end
 
-  describe ".find" do
+  describe "self.find" do
     it "returns nil if key doesn't exist" do
       SSO::Token.find("notatoken").should be_nil
     end
@@ -37,7 +37,7 @@ describe SSO::Token do
     end
   end
 
-  describe ".identify" do
+  describe "self.identify" do
     let(:default_scope) { SSO.config.default_scope } # :user
 
     before do
@@ -88,11 +88,7 @@ describe SSO::Token do
     end
   end
 
-  describe ".find_by_identity" do
-    before(:each) do
-      SSO.config.redis.del("sso:identity:123")
-    end
-
+  describe "self.find_by_identity" do
     let(:token) { SSO::Token.new }
 
     it "returns empty array if no existing tokens associated with id" do
