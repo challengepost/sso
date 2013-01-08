@@ -77,7 +77,6 @@ class SSO::Token
     @request_path   = attributes["request_path"]
     @identity       = attributes["identity"]
     @session        = ActiveSupport::JSON.decode(attributes["session"] || "{}")
-    @scopes         = []
   end
 
   def save
@@ -121,14 +120,14 @@ class SSO::Token
 
     @identity = id if scope == default_scope
     session["#{scope}_id"] = id
-    @scopes << scope
     save
   end
 
   def dismiss(*scopes)
-    if scopes.empty?
-      scopes = @scopes
+    if scopes.empty? || scopes == [default_scope]
+      scopes = all_scopes
     end
+
     scopes.each do |scope|
       @identity = nil if scope == default_scope
       session[session_scope_key(scope)] = nil
@@ -162,6 +161,13 @@ private
 
   def session_scope_key(scope)
     "#{scope}_id"
+  end
+
+  def all_scopes
+    session_scopes = session.keys.grep(/.*_id/) { |key| key.gsub("_id", "") }.map(&:to_sym)
+    Set.new(session_scopes).tap do |scopes|
+      scopes << :user if @identity # ensure user scope is set for legacy purposes
+    end
   end
 
   # Public: Store sso keys for a given identity in redis set

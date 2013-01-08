@@ -108,21 +108,23 @@ describe SSO::Token do
       SSO::Token.current_token.identity(:admin).should be_nil
     end
 
-    it "removes identity and session id specified by default scope" do
-      SSO::Token.identify(14)
-      SSO::Token.dismiss(default_scope)
+    it "removes all scoped identities if no scopes explicitly given" do
+      SSO::Token.identify(14, scope: default_scope)
+      SSO::Token.identify(15, scope: :admin)
 
+      SSO::Token.dismiss(default_scope)
       SSO::Token.current_token.identity.should be_nil
       SSO::Token.current_token.identity(default_scope).should be_nil
+      SSO::Token.current_token.identity(:admin).should be_nil
     end
 
     it "removes all scoped identities if no scopes explicitly given" do
-      SSO::Token.identify(15, scope: :user)
-      SSO::Token.identify(16, scope: :admin)
+      SSO::Token.identify(16, scope: default_scope)
+      SSO::Token.identify(17, scope: :admin)
 
       SSO::Token.dismiss
       SSO::Token.current_token.identity.should be_nil
-      SSO::Token.current_token.identity(:user).should be_nil
+      SSO::Token.current_token.identity(default_scope).should be_nil
       SSO::Token.current_token.identity(:admin).should be_nil
     end
   end
@@ -246,6 +248,23 @@ describe SSO::Token do
 
     it "returns nil if none set" do
       token.identity.should be_nil
+    end
+
+    it "returns identity for scope if set" do
+      token.identify(16, scope: :admin)
+      token.identity(:admin).should eq(16)
+    end
+
+    it "returns default scope identity if no scope given" do
+      token.identify(17)
+      token.identity.should eq(17)
+      token.identity(default_scope).should eq(17)
+    end
+
+    it "returns default scope identity if default scope" do
+      token.identify(17, scope: default_scope)
+      token.identity.should eq(17)
+      token.identity(default_scope).should eq(17)
     end
   end
 end
