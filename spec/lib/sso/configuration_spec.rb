@@ -56,4 +56,15 @@ describe SSO do
       last_response.headers["Location"].should == "http://centraldomain.com/sso/auth/new_token"
     end
   end
+
+  describe "default_scope" do
+    it "defaults to :user" do
+      SSO.config.default_scope.should eq(:user)
+    end
+
+    it "is configurable" do
+      SSO.config.default_scope = :admin
+      SSO.config.default_scope.should eq(:admin)
+    end
+  end
 end
