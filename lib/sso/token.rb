@@ -29,14 +29,14 @@ class SSO::Token
   #   # => <SSO::Token>
   #
   # Returns the current token if successful.
-  def self.identify(identity)
-    if current_token
-      current_token.identity = identity
-      current_token.save
-      current_token
-    else
-      false
-    end
+  def self.identify(identity, opts = {})
+    return false unless current_token
+    scope = opts[:scope] || default_scope
+
+    current_token.identity = identity if scope == default_scope
+    current_token.session["#{scope}_id"] = identity
+    current_token.save
+    current_token
   end
 
   # Public: Return existing tokens matching given identity.
@@ -55,13 +55,17 @@ class SSO::Token
     possible_tokens.select { |token| token.identity == identity }
   end
 
+  def self.load(redis_value = nil)
+    return nil if redis_value.nil?
+    new(ActiveSupport::JSON.decode(redis_value.to_s))
+  end
+
   def self.redis
     SSO.config.redis
   end
 
-  def self.load(redis_value = nil)
-    return nil if redis_value.nil?
-    new(ActiveSupport::JSON.decode(redis_value.to_s))
+  def self.default_scope
+    SSO.config.default_scope
   end
 
   def initialize(attributes = {})

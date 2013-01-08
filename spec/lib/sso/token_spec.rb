@@ -38,30 +38,53 @@ describe SSO::Token do
   end
 
   describe ".identify" do
+    let(:default_scope) { SSO.config.default_scope } # :user
+
     before do
       SSO::Token.current_token = SSO::Token.create(mock(:request, host: "google.com", fullpath: "/"))
     end
 
     it "sets the current token's identity" do
       SSO::Token.identify(5)
-
-      SSO::Token.current_token.identity.should == 5
+      SSO::Token.current_token.identity.should eq(5)
     end
 
     it "returns true if current token's identity is set" do
-      SSO::Token.identify(5).should be_true
+      SSO::Token.identify(6).should be_true
     end
 
     it "returns false if there is no current token" do
       SSO::Token.current_token = nil
-
-      SSO::Token.identify(5).should be_false
+      SSO::Token.identify(7).should be_false
     end
 
     it "saves the token" do
-      SSO::Token.identify(5)
+      SSO::Token.identify(8)
+      SSO::Token.find(SSO::Token.current_token.key).identity.should eq(8)
+    end
 
-      SSO::Token.find(SSO::Token.current_token.key).identity.should == 5
+    it "sets default_scope id on token session" do
+      SSO::Token.identify(9)
+      SSO::Token.current_token.session["#{default_scope}_id"].should eq(9)
+    end
+
+    context "with scope" do
+      it "sets the given scope as attribute in the session" do
+        SSO::Token.identify(10, scope: :admin)
+        SSO::Token.current_token.session["admin_id"].should eq(10)
+      end
+
+      it "does not set default scope identity" do
+        SSO::Token.identify(11, scope: :admin)
+        default_scope.should_not eq(:admin)
+        SSO::Token.current_token.session["#{default_scope}_id"].should be_nil
+      end
+
+      it "sets identity and session id if given scope is default scope" do
+        SSO::Token.identify(12, scope: default_scope)
+        SSO::Token.current_token.identity.should eq(12)
+        SSO::Token.current_token.session["#{default_scope}_id"].should eq(12)
+      end
     end
   end
 
