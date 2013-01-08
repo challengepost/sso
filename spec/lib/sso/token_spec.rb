@@ -1,6 +1,8 @@
 require 'spec_helper'
 
 describe SSO::Token do
+  let(:default_scope) { SSO.config.default_scope } # :user
+
   before :each do
     SSO::Token.current_token = nil
   end
@@ -38,8 +40,6 @@ describe SSO::Token do
   end
 
   describe "self.identify" do
-    let(:default_scope) { SSO.config.default_scope } # :user
-
     before do
       SSO::Token.current_token = SSO::Token.create(mock(:request, host: "google.com", fullpath: "/"))
     end
@@ -72,19 +72,58 @@ describe SSO::Token do
       it "sets the given scope as attribute in the session" do
         SSO::Token.identify(10, scope: :admin)
         SSO::Token.current_token.session["admin_id"].should eq(10)
+        SSO::Token.current_token.identity(:admin).should eq(10)
       end
 
       it "does not set default scope identity" do
         SSO::Token.identify(11, scope: :admin)
         default_scope.should_not eq(:admin)
+        SSO::Token.current_token.identity.should be_nil
+        SSO::Token.current_token.identity(default_scope).should be_nil
         SSO::Token.current_token.session["#{default_scope}_id"].should be_nil
       end
 
       it "sets identity and session id if given scope is default scope" do
         SSO::Token.identify(12, scope: default_scope)
         SSO::Token.current_token.identity.should eq(12)
+        SSO::Token.current_token.identity(:user).should eq(12)
         SSO::Token.current_token.session["#{default_scope}_id"].should eq(12)
       end
+    end
+  end
+
+  describe "self.dismiss" do
+    before do
+      SSO::Token.current_token = SSO::Token.create(mock(:request, host: "google.com", fullpath: "/"))
+    end
+
+    it "returns false if no current_token" do
+      SSO::Token.current_token = nil
+      SSO::Token.dismiss.should be_false
+    end
+
+    it "removes session id specified by scope" do
+      SSO::Token.identify(13, scope: :admin)
+      SSO::Token.dismiss(:admin)
+      SSO::Token.current_token.identity(:admin).should be_nil
+    end
+
+    it "removes identity and session id specified by default scope" do
+      SSO::Token.identify(14)
+      SSO::Token.dismiss(default_scope)
+
+      SSO::Token.current_token.identity.should be_nil
+      SSO::Token.current_token.identity(default_scope).should be_nil
+    end
+
+    it "removes all scoped identities if no scopes explicitly given" do
+      SSO::Token.identify(15, scope: :user)
+      SSO::Token.identify(16, scope: :admin)
+
+      SSO::Token.dismiss
+      SSO::Token.current_token.identity.should be_nil
+      SSO::Token.current_token.identity(:user).should be_nil
+      SSO::Token.current_token.identity(:admin).should be_nil
     end
   end
 
@@ -183,24 +222,30 @@ describe SSO::Token do
   end
 
   describe "==" do
-    before do
-      @token = SSO::Token.new
-    end
+    let(:token) { SSO::Token.new }
 
     it "returns true if keys match" do
-      @token.should == SSO::Token.new("key" => @token.key)
+      token.should == SSO::Token.new("key" => token.key)
     end
 
     it "returns false if keys are different" do
-      @token.should_not == SSO::Token.new("key" => "different key")
+      token.should_not == SSO::Token.new("key" => "different key")
     end
 
     it "returns false if other token is nil" do
-      @token.should_not == nil
+      token.should_not == nil
     end
 
     it "returns false if not a token" do
-      @token.should_not == mock(:token, key: @token.key)
+      token.should_not == mock(:token, key: token.key)
+    end
+  end
+
+  describe "identity" do
+    let(:token) { SSO::Token.new }
+
+    it "returns nil if none set" do
+      token.identity.should be_nil
     end
   end
 end
