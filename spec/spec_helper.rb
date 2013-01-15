@@ -21,6 +21,9 @@ RSpec.configure do |config|
 
     SSO.config.central_domain = "centraldomain.com"
     SSO.config.redis = $redis
+    SSO.config.default_scope = :user
+
+    SSO.config.redis.flushdb
   end
 
   def log

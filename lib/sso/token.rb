@@ -29,14 +29,16 @@ class SSO::Token
   #   # => <SSO::Token>
   #
   # Returns the current token if successful.
-  def self.identify(identity)
-    if current_token
-      current_token.identity = identity
-      current_token.save
-      current_token
-    else
-      false
-    end
+  def self.identify(identity, opts = {})
+    return false unless current_token
+
+    current_token.identify(identity, opts)
+  end
+
+  def self.dismiss(*scopes)
+    return false unless current_token
+
+    current_token.dismiss(*scopes)
   end
 
   # Public: Return existing tokens matching given identity.
@@ -55,13 +57,17 @@ class SSO::Token
     possible_tokens.select { |token| token.identity == identity }
   end
 
+  def self.load(redis_value = nil)
+    return nil if redis_value.nil?
+    new(ActiveSupport::JSON.decode(redis_value.to_s))
+  end
+
   def self.redis
     SSO.config.redis
   end
 
-  def self.load(redis_value = nil)
-    return nil if redis_value.nil?
-    new(ActiveSupport::JSON.decode(redis_value.to_s))
+  def self.default_scope
+    SSO.config.default_scope
   end
 
   def initialize(attributes = {})
@@ -78,6 +84,7 @@ class SSO::Token
 
     redis.set(@key, to_json)
     redis.expire(@key, EXPIRES_IN)
+    self
   end
 
   def populate(request)
@@ -100,6 +107,34 @@ class SSO::Token
     token && key == token.key && token.is_a?(SSO::Token)
   end
 
+  def identity(scope = default_scope)
+    if scope == default_scope
+      @identity
+    else
+      session[session_scope_key(scope)]
+    end
+  end
+
+  def identify(id, opts = {})
+    scope = opts[:scope] || default_scope
+
+    @identity = id if scope == default_scope
+    session["#{scope}_id"] = id
+    save
+  end
+
+  def dismiss(*scopes)
+    if scopes.empty? || scopes == [default_scope]
+      scopes = all_scopes
+    end
+
+    scopes.each do |scope|
+      @identity = nil if scope == default_scope
+      session[session_scope_key(scope)] = nil
+    end
+    save
+  end
+
   def identity_history
     IdentityHistory.new(@identity)
   end
@@ -118,6 +153,21 @@ private
 
   def redis
     self.class.redis
+  end
+
+  def default_scope
+    self.class.default_scope
+  end
+
+  def session_scope_key(scope)
+    "#{scope}_id"
+  end
+
+  def all_scopes
+    session_scopes = session.keys.grep(/.*_id/) { |key| key.gsub("_id", "") }.map(&:to_sym)
+    Set.new(session_scopes).tap do |scopes|
+      scopes << :user if @identity # ensure user scope is set for legacy purposes
+    end
   end
 
   # Public: Store sso keys for a given identity in redis set

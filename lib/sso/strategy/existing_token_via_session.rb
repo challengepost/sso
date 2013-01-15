@@ -11,6 +11,7 @@ class SSO::Strategy::ExistingTokenViaSession < SSO::Strategy::Base
     # in favor of adding current_sso_token to @env
     # example in warden: https://github.com/hassox/warden/blob/master/lib/warden/manager.rb#L33
     SSO::Token.current_token = current_sso_token
+    @env['current_sso_token'] = current_sso_token
     ActiveRecord::Base.logger.info "Request for token: #{current_sso_token.key}"
     @app.call(@env)
   end
