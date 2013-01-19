@@ -20,7 +20,7 @@ class SSO::Strategy::Skip < SSO::Strategy::Base
   end
 
   def call
-    @app.call(@env)
+    app.call(env)
   end
 
 end

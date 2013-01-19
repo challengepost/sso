@@ -19,6 +19,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "doesn't set current_token" do
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
     end
@@ -34,6 +35,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "doesn't set current_token" do
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
 
@@ -59,7 +61,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "sets current_token" do
-        SSO::Token.current_token.should == @token
+        last_request.env['current_sso_token'].should eq(@token)
       end
 
       it "logs to the Rails.logger" do
@@ -73,6 +75,7 @@ describe SSO::Middleware::Authentication do
 
         get "/?sso=notarealtoken"
 
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
     end
@@ -90,6 +93,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "doesn't set the current token" do
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
     end
@@ -117,6 +121,7 @@ describe SSO::Middleware::Authentication do
       it "doesn't set current_token" do
         get "/?sso=#{@token.key}"
 
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
 
@@ -139,6 +144,7 @@ describe SSO::Middleware::Authentication do
         end
 
         it "doesn't set current_token" do
+          last_request.env['current_sso_token'].should be_nil
           SSO::Token.current_token.should be_nil
         end
 
@@ -160,6 +166,7 @@ describe SSO::Middleware::Authentication do
         end
 
         it "doesn't set current_token" do
+          last_request.env['current_sso_token'].should be_nil
           SSO::Token.current_token.should be_nil
         end
 
@@ -180,6 +187,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "doesn't set current_token" do
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
 
@@ -207,6 +215,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "doesn't set current_token" do
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
     end
@@ -222,6 +231,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "doesn't set current_token" do
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
 
@@ -255,6 +265,7 @@ describe SSO::Middleware::Authentication do
       end
 
       it "doesn't set current_token" do
+        last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
 

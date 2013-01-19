@@ -1,41 +1,37 @@
 class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
   def self.should_process?(request)
-    request.path =~ /^\/sso\/auth/  
+    request.path =~ /^\/sso\/auth/
   end
 
   def call
     return invalid_request_token_call if request_token.nil?
-    ActiveRecord::Base.logger.info "Authenticating session for central domain: #{@request.session[:sso_token]}"
+    ActiveRecord::Base.logger.info "Authenticating session for central domain: #{request.session[:sso_token]}"
 
     if session_token
       ActiveRecord::Base.logger.info "Existing token found: #{session_token.key}"
-      update_tokens!
+      swap_request_token_with_session_token!
       ActiveRecord::Base.logger.info "Existing token updated: #{session_token.inspect}"
     else
       ActiveRecord::Base.logger.info "Existing token not found."
     end
 
-    @request.session[:sso_token] = request_token.key
+    request.session[:sso_token] = request_token.key
     redirect_to request_token_return_url
   end
 
   protected
 
   def request_token
-    @request_token ||= SSO::Token.find(@request.path.gsub("/sso/auth/", ""))
+    @request_token ||= SSO::Token.find(request.path.gsub("/sso/auth/", ""))
   end
 
   def session_token
-    @session_token ||= SSO::Token.find(@request.session[:sso_token])
+    @session_token ||= SSO::Token.find(request.session[:sso_token])
   end
 
-  def update_tokens!
+  def swap_request_token_with_session_token!
     session_token.update(request_token)
-    update_request_token!
-  end
-
-  def update_request_token!
-    request_token.destroy
+    @request_token.destroy
     @request_token = session_token
   end
 
@@ -45,6 +41,6 @@ class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
 
   def invalid_request_token_call
     ActiveRecord::Base.logger.info "Invalid token while authenticating"
-    redirect_to @request.referrer
+    redirect_to request.referrer
   end
 end
