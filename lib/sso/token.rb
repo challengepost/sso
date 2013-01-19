@@ -62,6 +62,11 @@ class SSO::Token
     new(ActiveSupport::JSON.decode(redis_value.to_s))
   end
 
+  def self.current_token=(token)
+    ActiveSupport::Deprecation.warn("SSO::Token.current_token is now deprecated")
+    @@current_token = token
+  end
+
   def self.redis
     SSO.config.redis
   end
