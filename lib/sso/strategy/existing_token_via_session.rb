@@ -9,11 +9,9 @@ class SSO::Strategy::ExistingTokenViaSession < SSO::Strategy::Base
     current_sso_token
   end
 
-  def call
+  def call(env)
     # TODO
-    # Remove use of SSO::Token.current_token
-    # in favor of adding current_sso_token to @env
-    # example in warden: https://github.com/hassox/warden/blob/master/lib/warden/manager.rb#L33
+    # Deprecate SSO::Token.current_token
     SSO::Token.current_token = current_sso_token
     env['current_sso_token'] = current_sso_token
     ActiveRecord::Base.logger.info "Request for token: #{current_sso_token.key}"

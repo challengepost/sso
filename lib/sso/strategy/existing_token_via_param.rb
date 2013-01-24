@@ -3,10 +3,10 @@ class SSO::Strategy::ExistingTokenViaParam < SSO::Strategy::Base
     !!request['sso']
   end
 
-  def call
-    return invalid_token_call if token.nil?
-    return missing_originator_key_in_session_call if originator_key_in_session.nil?
-    return invalid_originator_key_call unless originator_key_verified?
+  def call(env)
+    return invalid_token_call(env) if token.nil?
+    return missing_originator_key_in_session_call(env) if originator_key_in_session.nil?
+    return invalid_originator_key_call(env) unless originator_key_verified?
 
     ActiveRecord::Base.logger.info "Setting session token: #{token.key}"
     request.session[:sso_token] = token.key
@@ -27,19 +27,19 @@ class SSO::Strategy::ExistingTokenViaParam < SSO::Strategy::Base
     request.session[:originator_key]
   end
 
-  def invalid_token_call
+  def invalid_token_call(env)
     ActiveRecord::Base.logger.warn "Invalid token while attempting to verify: #{request.params['sso']}"
     app.call(env)
   end
 
-  def missing_originator_key_in_session_call
+  def missing_originator_key_in_session_call(env)
     ActiveRecord::Base.logger.warn "No session originator key found while verifying token: #{token.key}"
-    @app.call(env)
+    app.call(env)
   end
 
-  def invalid_originator_key_call
+  def invalid_originator_key_call(env)
     ActiveRecord::Base.logger.warn "Originator key didn't match while verifying token: #{token.key}"
-    @app.call(env)
+    app.call(env)
   end
 end
 

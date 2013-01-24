@@ -3,8 +3,8 @@ class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
     request.path =~ /^\/sso\/auth/
   end
 
-  def call
-    return invalid_request_token_call if request_token.nil?
+  def call(env)
+    return invalid_request_token_call(env) if request_token.nil?
     ActiveRecord::Base.logger.info "Authenticating session for central domain: #{request.session[:sso_token]}"
 
     if session_token
@@ -39,7 +39,7 @@ class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
     "http://#{request_token.request_domain}#{request_token.request_path}#{request_token.request_path.match(/\?/) ? "&sso=" : "?sso="}#{request_token.key}"
   end
 
-  def invalid_request_token_call
+  def invalid_request_token_call(env)
     ActiveRecord::Base.logger.info "Invalid token while authenticating"
     redirect_to request.referrer
   end

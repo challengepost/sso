@@ -18,7 +18,7 @@ class SSO::Middleware::Authentication
     SSO.config.check_configuration!
     SSO::Token.current_token = nil
     strategy = sso_strategy_factory(env)
-    strategy.call
+    strategy.call(env)
   end
 
 private
@@ -26,7 +26,7 @@ private
   def sso_strategy_factory(env)
     request = Rack::Request.new(env)
     strategy_class = choose_authentication_strategy_class(request)
-    strategy_class.new(app, env, request)
+    strategy_class.new(app, request)
   end
 
   def choose_authentication_strategy_class(request)

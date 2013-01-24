@@ -1,9 +1,9 @@
 class SSO::Strategy::Base
 
-  attr_reader :app, :env, :request
+  attr_reader :app, :request
 
-  def initialize(app, env, request)
-    @app, @env, @request = app, env, request
+  def initialize(app, request)
+    @app, @request = app, request
   end
 
   def redirect_to(url)
