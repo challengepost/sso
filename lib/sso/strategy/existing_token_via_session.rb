@@ -14,6 +14,9 @@ class SSO::Strategy::ExistingTokenViaSession < SSO::Strategy::Base
     # Deprecate SSO::Token.current_token
     SSO::Token.current_token = current_sso_token
     env['current_sso_token'] = current_sso_token
+
+    SSO::Token.run_callbacks(current_sso_token)
+
     ActiveRecord::Base.logger.info "Request for token: #{current_sso_token.key}"
     app.call(env)
   end

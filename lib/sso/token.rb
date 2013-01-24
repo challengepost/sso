@@ -1,6 +1,8 @@
 require 'securerandom'
 
 class SSO::Token
+  extend SSO::Callbacks
+
   EXPIRES_IN = 1_209_600 # 2 weeks
 
   cattr_accessor :current_token
@@ -63,7 +65,7 @@ class SSO::Token
   end
 
   def self.current_token=(token)
-    ActiveSupport::Deprecation.warn("SSO::Token.current_token is now deprecated")
+    # ActiveSupport::Deprecation.warn("SSO::Token.current_token is now deprecated")
     @@current_token = token
   end
 
@@ -137,7 +139,12 @@ class SSO::Token
       @identity = nil if scope == default_scope
       session[session_scope_key(scope)] = nil
     end
-    save
+
+    if scopes == all_scopes
+      destroy
+    else
+      save
+    end
   end
 
   def identity_history
