@@ -4,6 +4,7 @@ class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
   end
 
   def call(env)
+    ActiveRecord::Base.logger.info self.class.name
     return invalid_request_token_call(env) if request_token.nil?
     ActiveRecord::Base.logger.info "Authenticating session for central domain: #{request.session[:sso_token]}"
 

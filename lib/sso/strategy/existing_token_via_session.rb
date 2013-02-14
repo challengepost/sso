@@ -10,6 +10,7 @@ class SSO::Strategy::ExistingTokenViaSession < SSO::Strategy::Base
   end
 
   def call(env)
+    ActiveRecord::Base.logger.info self.class.name
     # TODO
     # Deprecate SSO::Token.current_token
     SSO::Token.current_token = current_sso_token

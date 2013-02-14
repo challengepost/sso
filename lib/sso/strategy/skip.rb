@@ -20,6 +20,7 @@ class SSO::Strategy::Skip < SSO::Strategy::Base
   end
 
   def call(env)
+    ActiveRecord::Base.logger.info self.class.name
     app.call(env)
   end
 

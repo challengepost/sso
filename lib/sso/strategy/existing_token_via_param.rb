@@ -4,6 +4,7 @@ class SSO::Strategy::ExistingTokenViaParam < SSO::Strategy::Base
   end
 
   def call(env)
+    ActiveRecord::Base.logger.info self.class.name
     return invalid_token_call(env) if token.nil?
     return missing_originator_key_in_session_call(env) if originator_key_in_session.nil?
     return invalid_originator_key_call(env) unless originator_key_verified?
