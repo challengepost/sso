@@ -19,8 +19,16 @@ class SSO::Strategy::Base
     false
   end
 
-  def call
+  def call(env)
     raise "Subclass should implement!"
+  end
+
+  def announce
+    logger :info, "Using #{self.class.name} for #{request.host}"
+  end
+
+  def logger(method, message)
+    ActiveRecord::Base.logger.send(method, "SSO: #{message}")
   end
 
 end

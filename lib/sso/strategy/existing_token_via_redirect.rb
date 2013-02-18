@@ -4,16 +4,15 @@ class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
   end
 
   def call(env)
-    ActiveRecord::Base.logger.info self.class.name
     return invalid_request_token_call(env) if request_token.nil?
-    ActiveRecord::Base.logger.info "Authenticating session for central domain: #{request.session[:sso_token]}"
+    logger :info, "Authenticating session for central domain: #{request.session[:sso_token]}"
 
     if session_token
-      ActiveRecord::Base.logger.info "Existing token found: #{session_token.key}"
+      logger :info, "Existing token found: #{session_token.key}"
       swap_request_token_with_session_token!
-      ActiveRecord::Base.logger.info "Existing token updated: #{session_token.inspect}"
+      logger :info, "Existing token updated: #{session_token.inspect}"
     else
-      ActiveRecord::Base.logger.info "Existing token not found."
+      logger :info, "Existing token not found."
     end
 
     request.session[:sso_token] = request_token.key
@@ -41,7 +40,7 @@ class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
   end
 
   def invalid_request_token_call(env)
-    ActiveRecord::Base.logger.info "Invalid token while authenticating"
+    logger :info, "Invalid token while authenticating"
     redirect_to request.referrer
   end
 end

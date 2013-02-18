@@ -18,6 +18,7 @@ class SSO::Middleware::Authentication
     SSO.config.check_configuration!
     SSO::Token.current_token = nil
     strategy = sso_strategy_factory(env)
+    strategy.announce
     strategy.call(env)
   end
 

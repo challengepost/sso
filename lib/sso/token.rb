@@ -32,6 +32,7 @@ class SSO::Token
   #
   # Returns the current token if successful.
   def self.identify(identity, opts = {})
+    ActiveRecord::Base.logger.info("identifying: #{identity} for current_token #{current_token.inspect}")
     return false unless current_token
 
     current_token.identify(identity, opts)
