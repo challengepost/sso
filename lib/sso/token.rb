@@ -3,6 +3,16 @@ require 'securerandom'
 class SSO::Token
   extend SSO::Callbacks
 
+  DummyToken = Struct.new(:request) do
+    def identify(*args)
+      ActiveRecord::Base.logger.info("attempting to identify dummy token: #{args.inspect}")
+    end
+
+    def dismiss(*args)
+      ActiveRecord::Base.logger.info("attempting to dismiss dummy token: #{args.inspect}")
+    end
+  end
+
   EXPIRES_IN = 1_209_600 # 2 weeks
 
   cattr_accessor :current_token
@@ -19,6 +29,10 @@ class SSO::Token
     token.populate(request)
     token.save
     token
+  end
+
+  def self.current_token_from_request(request)
+    request['current_sso_token'] || DummyToken.new(request)
   end
 
   # Public: Associate and save a user id with the current sso token.
@@ -132,6 +146,8 @@ class SSO::Token
   end
 
   def dismiss(*scopes)
+    options = scopes.extract_options!
+
     if scopes.empty? || scopes == [default_scope]
       scopes = all_scopes
     end
@@ -141,7 +157,7 @@ class SSO::Token
       session[session_scope_key(scope)] = nil
     end
 
-    if scopes == all_scopes
+    if dismiss_all_scopes_on_central_domain?(scopes, options[:domain])
       destroy
     else
       save
@@ -181,6 +197,12 @@ private
     Set.new(session_scopes).tap do |scopes|
       scopes << :user if @identity # ensure user scope is set for legacy purposes
     end
+  end
+
+  def dismiss_all_scopes_on_central_domain?(scopes, domain = nil)
+    domain.present? &&
+      domain == SSO.config.central_domain &&
+      all_scopes.all? { |scope| scopes.include?(scope) }
   end
 
   # Public: Store sso keys for a given identity in redis set

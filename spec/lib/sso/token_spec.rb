@@ -102,13 +102,23 @@ describe SSO::Token do
       SSO::Token.dismiss.should be_false
     end
 
-    it "removes session id specified by scope" do
+    it "removes scoped identity" do
       SSO::Token.identify(13, scope: :admin)
       SSO::Token.dismiss(:admin)
       SSO::Token.current_token.identity(:admin).should be_nil
     end
 
-    it "removes all scoped identities if no scopes explicitly given" do
+    it "removes scoped identities and retains default identity" do
+      SSO::Token.identify(16)
+      SSO::Token.identify(17, scope: :admin)
+
+      SSO::Token.dismiss(:admin)
+      SSO::Token.current_token.identity.should eq(16)
+      SSO::Token.current_token.identity(default_scope).should eq(16)
+      SSO::Token.current_token.identity(:admin).should be_nil
+    end
+
+    it "removes all scoped identities if removing default scope" do
       SSO::Token.identify(14, scope: default_scope)
       SSO::Token.identify(15, scope: :admin)
 
@@ -118,11 +128,11 @@ describe SSO::Token do
       SSO::Token.current_token.identity(:admin).should be_nil
     end
 
-    it "removes all scoped identities if no scopes explicitly given" do
-      SSO::Token.identify(16, scope: default_scope)
-      SSO::Token.identify(17, scope: :admin)
+    it "removes all scoped identities if no explicit scope" do
+      SSO::Token.identify(14, scope: default_scope)
+      SSO::Token.identify(15, scope: :admin)
 
-      SSO::Token.dismiss
+      SSO::Token.dismiss(default_scope)
       SSO::Token.current_token.identity.should be_nil
       SSO::Token.current_token.identity(default_scope).should be_nil
       SSO::Token.current_token.identity(:admin).should be_nil
@@ -243,7 +253,7 @@ describe SSO::Token do
     end
   end
 
-  describe "identity" do
+  describe "#identity" do
     let(:token) { SSO::Token.new }
 
     it "returns nil if none set" do
@@ -267,4 +277,80 @@ describe SSO::Token do
       token.identity(default_scope).should eq(17)
     end
   end
+
+  describe "#dismiss" do
+    let(:token) { SSO::Token.new }
+
+    it "removes scoped identity" do
+      token.identify(13, scope: :admin)
+
+      token.dismiss(:admin)
+
+      token.identity(:admin).should be_nil
+    end
+
+    it "removes scoped identities and retains default identity" do
+      token.identify(16)
+      token.identify(17, scope: :admin)
+
+      token.dismiss(:admin)
+
+      token.identity.should eq(16)
+      token.identity(default_scope).should eq(16)
+      token.identity(:admin).should be_nil
+    end
+
+    it "removes all scoped identities if removing default scope" do
+      token.identify(14, scope: default_scope)
+      token.identify(15, scope: :admin)
+
+      token.dismiss(default_scope)
+
+      token.identity.should be_nil
+      token.identity(default_scope).should be_nil
+      token.identity(:admin).should be_nil
+    end
+
+    it "removes all scoped identities if no explicit scope" do
+      token.identify(18, scope: default_scope)
+      token.identify(19, scope: :admin)
+
+      token.dismiss(default_scope)
+
+      token.identity.should be_nil
+      token.identity(default_scope).should be_nil
+      token.identity(:admin).should be_nil
+    end
+
+    it "destroys token if logging out all scopes on central domain" do
+      token.identify(20)
+      token.should_receive(:destroy)
+
+      token.dismiss(domain: SSO.config.central_domain)
+
+      token.identity.should be_nil
+    end
+
+    it "does not destroy token if optional domain does not match central domain" do
+      token.identify(20)
+      token.should_not_receive(:destroy)
+
+      token.dismiss(domain: "example.com")
+
+      token.identity.should be_nil
+    end
+
+    it "does not destroy token if not logging out all scopes" do
+      token.identify(20)
+      token.identify(20, scope: :admin)
+      token.should_not_receive(:destroy)
+
+      token.dismiss(:admin, domain: SSO.config.central_domain)
+
+      token.identity.should eq(20)
+      token.identity(:admin).should be_nil
+    end
+
+  end
+
 end
