@@ -1,6 +1,18 @@
 require 'securerandom'
 
 class SSO::Token
+  extend SSO::Callbacks
+
+  DummyToken = Struct.new(:request) do
+    def identify(*args)
+      ActiveRecord::Base.logger.info("attempting to identify dummy token: #{args.inspect}")
+    end
+
+    def dismiss(*args)
+      ActiveRecord::Base.logger.info("attempting to dismiss dummy token: #{args.inspect}")
+    end
+  end
+
   EXPIRES_IN = 1_209_600 # 2 weeks
 
   cattr_accessor :current_token
@@ -19,6 +31,10 @@ class SSO::Token
     token
   end
 
+  def self.current_token_from_request(request)
+    request['current_sso_token'] || DummyToken.new(request)
+  end
+
   # Public: Associate and save a user id with the current sso token.
   #
   # identity  - The Integer id to be save.
@@ -30,6 +46,7 @@ class SSO::Token
   #
   # Returns the current token if successful.
   def self.identify(identity, opts = {})
+    ActiveRecord::Base.logger.info("identifying: #{identity} for current_token #{current_token.inspect}")
     return false unless current_token
 
     current_token.identify(identity, opts)
@@ -60,6 +77,11 @@ class SSO::Token
   def self.load(redis_value = nil)
     return nil if redis_value.nil?
     new(ActiveSupport::JSON.decode(redis_value.to_s))
+  end
+
+  def self.current_token=(token)
+    # ActiveSupport::Deprecation.warn("SSO::Token.current_token is now deprecated")
+    @@current_token = token
   end
 
   def self.redis
@@ -124,6 +146,8 @@ class SSO::Token
   end
 
   def dismiss(*scopes)
+    options = scopes.extract_options!
+
     if scopes.empty? || scopes == [default_scope]
       scopes = all_scopes
     end
@@ -132,7 +156,12 @@ class SSO::Token
       @identity = nil if scope == default_scope
       session[session_scope_key(scope)] = nil
     end
-    save
+
+    if dismiss_all_scopes_on_central_domain?(scopes, options[:domain])
+      destroy
+    else
+      save
+    end
   end
 
   def identity_history
@@ -168,6 +197,12 @@ private
     Set.new(session_scopes).tap do |scopes|
       scopes << :user if @identity # ensure user scope is set for legacy purposes
     end
+  end
+
+  def dismiss_all_scopes_on_central_domain?(scopes, domain = nil)
+    domain.present? &&
+      domain == SSO.config.central_domain &&
+      all_scopes.all? { |scope| scopes.include?(scope) }
   end
 
   # Public: Store sso keys for a given identity in redis set
