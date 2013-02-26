@@ -3,12 +3,18 @@ class SSO::Strategy::NewToken < SSO::Strategy::Base
     true # when all else fails
   end
 
-  def call
-    @request.session[:originator_key] = new_token.originator_key
+  def token
+    new_token
+  end
+
+  def call(env)
+    request.session[:originator_key] = new_token.originator_key
     redirect_to "http://#{SSO.config.central_domain}/sso/auth/#{new_token.key}"
   end
 
+  private
+
   def new_token
-    @new_token ||= SSO::Token.create(@request)
+    @new_token ||= SSO::Token.create(request)
   end
 end
