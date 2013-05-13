@@ -164,6 +164,23 @@ class SSO::Token
     end
   end
 
+  def expose(*args)
+    if args.length < 1 || args.length > 2
+      raise ArgumentError.new('Expected one or two arguments')
+    end
+
+    key, value = args
+    if value.nil? # getter
+      session.delete(key).tap do
+        save
+      end
+    else # setter
+      (session[key] = value).tap do
+        save
+      end
+    end
+  end
+
   def identity_history
     IdentityHistory.new(@identity)
   end

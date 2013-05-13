@@ -220,16 +220,41 @@ describe SSO::Token do
   end
 
   describe "#session" do
+    let(:token) { SSO::Token.new }
+
     it "defaults to an empty hash" do
-      SSO::Token.new.session.should == {}
+      token.session.should == {}
     end
 
-    it "persists sso session data" do
-      token = SSO::Token.new
-      token.session[:isAwesome?] = true
-      token.save
+    it "provides session access" do
+      token.session[:awesome] = true
+      token.session[:awesome].should be_true
+    end
 
-      SSO::Token.find(token.key).session["isAwesome?"].should be_true
+    context "persistence" do
+      let(:persisted_token) { SSO::Token.find(token.key) }
+
+      before do
+        token.session[:foo] = 'bar'
+        token.save
+      end
+
+      it "persists sso session data" do
+        persisted_token.session["foo"].should eq('bar')
+      end
+
+      it "can delete sso session data" do
+        persisted_token.session.delete('foo').should eq('bar')
+        persisted_token.session['foo'].should be_nil
+      end
+
+      it "deleted session data stays deleted" do
+        persisted_token.session.delete('foo')
+        persisted_token.save
+
+        refound_token = SSO::Token.find(token.key)
+        refound_token.session['foo'].should be_nil
+      end
     end
   end
 
@@ -350,7 +375,53 @@ describe SSO::Token do
       token.identity.should eq(20)
       token.identity(:admin).should be_nil
     end
-
   end
 
+  describe "expose" do
+    let(:token) { SSO::Token.new }
+
+    it "sets session value" do
+      token.expose('alias', 'fred')
+      token.session['alias'].should eq('fred')
+    end
+
+    it "persists token" do
+      token.expose('alias', 'fred')
+      persisted_token = SSO::Token.find(token.key)
+      persisted_token.session['alias'].should eq('fred')
+    end
+
+    it "returns nil if no value in session" do
+      token.expose('alias').should be_nil
+    end
+
+    it "raises ArgumentError if more than two args" do
+      expect { token.expose(:one, :two, :three) }.to raise_error(ArgumentError)
+    end
+
+    it "raises ArgumentError if less than one args" do
+      expect { token.expose }.to raise_error(ArgumentError)
+    end
+
+    context "session value present" do
+      before do
+        token.expose('alias', 'foo')
+      end
+
+      it "retreives from stored session value, deletes value from session and saves" do
+        token.expose('alias').should eq('foo')
+      end
+
+      it "deletes value from session" do
+        token.expose('alias')
+        token.session['alias'].should be_nil
+      end
+
+      it "persists token session" do
+        token.expose('alias')
+        persisted_token = SSO::Token.find(token.key)
+        persisted_token.session['alias'].should be_nil
+      end
+    end
+  end
 end
