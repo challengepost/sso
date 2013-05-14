@@ -164,6 +164,26 @@ class SSO::Token
     end
   end
 
+  # Public: Set/Get value from token session for one-time use.
+  #
+  # key   - The String representing the session key.
+  # value - The Object representing the session value for the given key.
+  # When omitted, the value for the given key is return, removed and the
+  # state persisted. When provided, the value is set and preserved.
+  #
+  # Examples
+  #   # Set the value 1234 on the session key 'alias' for one-time use
+  #   token.expose('alias', 1234)
+  #   # => 1234
+  #
+  #   # Get and remove value at session key 'alias'
+  #   token.expose('alias')
+  #   # => 1234
+  #
+  #   token.expose('alias')
+  #   # => nil
+  #
+  # Returns the value if present.
   def expose(*args)
     if args.length < 1 || args.length > 2
       raise ArgumentError.new('Expected one or two arguments')
