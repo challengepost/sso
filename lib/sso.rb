@@ -15,6 +15,18 @@ module SSO
     @configuration ||= Configuration.new
   end
 
+  # Public: Configure SSO via block syntax
+  #
+  # Examples
+  #
+  #  SSO.configure do |sso|
+  #    sso.skip_paths = [%r(^/passthrough$)]
+  #  end
+  #
+  def self.configure
+    yield config if block_given?
+  end
+
   # Provides helper methods to SSO for testing.
   #
   # To setup SSO in test mode call the SSO.test_mode! once before all tests are executed.
