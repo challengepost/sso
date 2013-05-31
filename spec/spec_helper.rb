@@ -19,6 +19,7 @@ RSpec.configure do |config|
 
     ActiveRecord::Base.logger = @logger
 
+    SSO.config.reset!
     SSO.config.central_domain = "centraldomain.com"
     SSO.config.redis = $redis
     SSO.config.default_scope = :user

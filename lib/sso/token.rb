@@ -11,6 +11,9 @@ class SSO::Token
     def dismiss(*args)
       ActiveRecord::Base.logger.info("attempting to dismiss dummy token: #{args.inspect}")
     end
+
+    attr_reader :key, :originator_key, :session, :request_domain, :request_path
+    attr_accessor :identity, :previous_identity
   end
 
   EXPIRES_IN = 1_209_600 # 2 weeks
