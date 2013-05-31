@@ -43,9 +43,9 @@ describe SSO do
 
     describe "skip_routes" do
       it "doesn't apply SSO paths in skip_paths" do
-        SSO.config.skip_paths = ["/passthrough"]
+        SSO.config.skip_paths = ["/skipme"]
 
-        get "/passthrough"
+        get "/skipme"
 
         last_response_should_skip_sso
       end
@@ -77,7 +77,7 @@ describe SSO do
       end
     end
 
-    describe "skip block" do
+    describe "passthrough_request" do
       let(:params) {{}}
       let(:env) {{}}
 
@@ -87,7 +87,7 @@ describe SSO do
 
       it "skips sso custom skip block resolves true" do
         SSO.configure do |sso|
-          sso.skip_request do |request|
+          sso.passthrough_request do |request|
             request.host == "api.challengepost.com"
           end
         end
@@ -100,7 +100,7 @@ describe SSO do
 
       it "redirects to sso if no omissions defined" do
         SSO.configure do |sso|
-          sso.skip_request do |request|
+          sso.passthrough_request do |request|
             request.host == "api.challengepost.com"
           end
         end

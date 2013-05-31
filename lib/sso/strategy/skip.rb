@@ -1,9 +1,12 @@
+# Public: Strategy for skipping all SSO processing by route or
+# preconfigured bot-matching
+#
 class SSO::Strategy::Skip < SSO::Strategy::Base
 
   class << self
 
     def should_process?(request)
-      skip_path?(request) || is_bot?(request) || skip_request?(request)
+      skip_path?(request) || is_bot?(request)
     end
 
     def skip_path?(request)
@@ -14,10 +17,6 @@ class SSO::Strategy::Skip < SSO::Strategy::Base
       (request.user_agent =~ SSO.config.robots).tap do |matches|
         ActiveRecord::Base.logger.info "Request for apparent bot" if matches
       end
-    end
-
-    def skip_request?(request)
-      SSO.config.skip_request_methods.any? { |method| method.call(request) }
     end
 
     def skip_path_match?(skip_path, request_path)
