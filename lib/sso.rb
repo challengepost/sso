@@ -20,7 +20,13 @@ module SSO
   # Examples
   #
   #  SSO.configure do |sso|
-  #    sso.skip_paths = [%r(^/passthrough$)]
+  #    # don't do any SSO processing on matching paths
+  #    sso.skip_paths = [%r(^/skipme$)]
+  #
+  #    # perform SSO processing without redirects
+  #    sso.passthrough_request do |req|
+  #      req.host == "api.example.com"
+  #    end
   #  end
   #
   def self.configure
