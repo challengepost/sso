@@ -9,7 +9,7 @@ class SSO::Strategy::NewToken < SSO::Strategy::Base
 
   def call(env)
     request.session[:originator_key] = new_token.originator_key
-    redirect_to "http://#{SSO.config.central_domain}/sso/auth/#{new_token.key}"
+    redirect_to sso_auth_url(new_token.key)
   end
 
   private

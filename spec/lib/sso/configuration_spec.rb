@@ -30,6 +30,17 @@ describe SSO do
     end
   end
 
+  describe "central_scheme" do
+    it "defaults to http" do
+      SSO.config.central_scheme.should eq('http')
+    end
+
+    it "is configurable" do
+      SSO.config.central_scheme = 'https'
+      SSO.config.central_scheme.should eq('https')
+    end
+  end
+
   context "skip logic" do
     def last_response_should_skip_sso
       last_response.status.should == 200

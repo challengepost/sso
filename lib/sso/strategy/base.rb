@@ -15,6 +15,10 @@ class SSO::Strategy::Base
     @response ||= Rack::Response.new
   end
 
+  def sso_auth_url(token_key)
+    "#{SSO.config.central_scheme}://#{SSO.config.central_domain}/sso/auth/#{token_key}"
+  end
+
   def self.should_process?(request)
     false
   end
