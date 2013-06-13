@@ -36,7 +36,8 @@ class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
   end
 
   def request_token_return_url
-    "http://#{request_token.request_domain}#{request_token.request_path}#{request_token.request_path.match(/\?/) ? "&sso=" : "?sso="}#{request_token.key}"
+    join = request_token.request_url.match(%r{\?}) ? "&" : "?"
+    [request_token.request_url, "sso=#{request_token.key}"].join(join)
   end
 
   def invalid_request_token_call(env)

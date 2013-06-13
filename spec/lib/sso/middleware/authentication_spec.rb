@@ -7,21 +7,52 @@ describe SSO::Middleware::Authentication do
 
   describe "Normal request" do
     context "Visitor doesn't have a token on the client domain" do
-      before do
+      it "redirects to the authenticate url on the central domain with a new token" do
         valid_token = mock(:token, key: "new_token", originator_key: "12345")
         SSO::Token.stub!(:create).and_return(valid_token)
         get "/"
-      end
-
-      it "redirects to the authenticate url on the central domain with a new token" do
         last_response.status.should == 302
         last_response.headers["Location"].should == "http://centraldomain.com/sso/auth/new_token"
       end
 
       it "doesn't set current_token" do
+        valid_token = mock(:token, key: "new_token", originator_key: "12345")
+        SSO::Token.stub!(:create).and_return(valid_token)
+        get "/"
         last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
       end
+
+      context "new visit, following redirects" do
+        def follow_sso_redirects!
+          # follow redirect for new token
+          # follow redirect for setting session on central domain
+          # follow redirect for setting session on satellite domain
+          3.times { follow_redirect! }
+        end
+
+        it "for new token" do
+          get "/"
+          follow_sso_redirects!
+          last_response.status.should == 200
+          last_response.body.should =~ /Ruby on Rails: Welcome aboard/
+        end
+
+        it "for additional params" do
+          get "/", { 'foo' => 'bar' }
+          follow_sso_redirects!
+          last_request.params.should eq({ "foo" => "bar" })
+          last_request.scheme.should eq("http")
+        end
+
+        it "for https request url" do
+          get "https://example.com/", { 'foo' => 'bar' }
+          follow_sso_redirects!
+          last_request.params.should eq({ "foo" => "bar" })
+          last_request.scheme.should eq("https")
+        end
+      end
+
     end
 
     context "visitor is a bot" do
@@ -99,8 +130,10 @@ describe SSO::Middleware::Authentication do
     end
 
     context "valid sso parameter is present" do
+      let(:request) { mock_request("http://example.com/") }
+
       before do
-        @token = SSO::Token.create(mock(:request, host: "example.com", fullpath: "/"))
+        @token = SSO::Token.create(request)
         @session[:originator_key] = @token.originator_key
         set_cookie @session.to_s
       end
@@ -198,9 +231,10 @@ describe SSO::Middleware::Authentication do
   end
 
   describe "Auth requests" do
+    let(:request) { mock_request("http://example.com/some/path") }
     context "token is valid" do
       before do
-        @token = SSO::Token.create(mock(:request, host: "example.com", fullpath: "/some/path"))
+        @token = SSO::Token.create(request)
 
         get "/sso/auth/#{@token.key}"
       end
@@ -242,17 +276,18 @@ describe SSO::Middleware::Authentication do
 
     context "Visitor has an existing token on the central domain" do
       before do
-        @existing_token = SSO::Token.create(mock(:request, host: "example.com", fullpath: "/some/path"))
+        request_1 = mock_request("http://example.com/some/path")
+        @existing_token = SSO::Token.create(request)
         @session[:sso_token] = @existing_token.key
         set_cookie @session.to_s
 
-        @token = SSO::Token.create(mock(:request, host: "anotherexample.com", fullpath: "/some/other/path"))
+        request_2 = mock_request("http://anotherexample.com/some/other/path")
+        @token = SSO::Token.create(request_2)
         get "/sso/auth/#{@token.key}"
       end
 
       it "updates existing token with data from the new token" do
-        SSO::Token.find(@existing_token.key).request_domain.should == "anotherexample.com"
-        SSO::Token.find(@existing_token.key).request_path.should == "/some/other/path"
+        SSO::Token.find(@existing_token.key).request_url.should == "http://anotherexample.com/some/other/path"
       end
 
       it "deletes the new token" do

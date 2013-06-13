@@ -10,3 +10,8 @@ group :development do
   gem 'rb-fsevent', '~> 0.9.1'
   gem "psych", ">= 1.3.4"
 end
+
+group :development, :test do
+  gem "pry"
+  gem "pry-debugger"
+end

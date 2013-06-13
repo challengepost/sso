@@ -10,7 +10,8 @@ class SSO::Strategy::ExistingTokenViaParam < SSO::Strategy::Base
 
     logger :info, "Setting session token: #{token.key}"
     request.session[:sso_token] = token.key
-    redirect_to "http://#{token.request_domain}#{token.request_path}"
+
+    redirect_to token.request_url
   end
 
   def token

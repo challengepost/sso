@@ -1,6 +1,7 @@
 require 'spec_helper'
 
 describe SSO::Token do
+  let(:request) { mock_request("http://www.google.com/search?q=apples") }
   let(:default_scope) { SSO.config.default_scope } # :user
 
   before :each do
@@ -9,14 +10,13 @@ describe SSO::Token do
 
   describe "self.create" do
     it "creates a new token" do
-      token = SSO::Token.create(Rack::Request.new({}))
+      token = SSO::Token.create(mock_request)
       SSO::Token.find(token.key).should_not be_nil
     end
 
     it "calls populate" do
-      mock = mock(:request, host: "www.google.com", fullpath: "/search?q=apples")
-      SSO::Token.any_instance.should_receive(:populate).with(mock)
-      token = SSO::Token.create(mock)
+      SSO::Token.any_instance.should_receive(:populate).with(request)
+      SSO::Token.create(request)
     end
   end
 
@@ -41,7 +41,11 @@ describe SSO::Token do
 
   describe "self.identify" do
     before do
-      SSO::Token.current_token = SSO::Token.create(mock(:request, host: "google.com", fullpath: "/"))
+      request.stub(host: "google.com")
+      request.stub(fullpath: "/")
+      request.stub(url: "http://google.com/")
+
+      SSO::Token.current_token = SSO::Token.create(request)
     end
 
     it "sets the current token's identity" do
@@ -94,7 +98,10 @@ describe SSO::Token do
 
   describe "self.dismiss" do
     before do
-      SSO::Token.current_token = SSO::Token.create(mock(:request, host: "google.com", fullpath: "/"))
+      request.stub(host: "google.com")
+      request.stub(fullpath: "/")
+      request.stub(url: "http://google.com/")
+      SSO::Token.current_token = SSO::Token.create(request)
     end
 
     it "returns false if no current_token" do
@@ -171,43 +178,98 @@ describe SSO::Token do
     end
   end
 
-  describe "initialize" do
+  describe "#initialize" do
+    let(:attributes) { {} }
+    let(:token) { SSO::Token.new(attributes) }
+
     it "creates a key" do
-      SSO::Token.new.key.should_not be_nil
+      token.key.should be_present
     end
 
     it "creates an originator_key" do
-      SSO::Token.new.originator_key.should_not be_nil
+      token.originator_key.should be_present
     end
+
+    it "sets identity" do
+      attributes["identity"] = '123'
+      token.identity.should eq('123')
+    end
+
+    it "sets request_url" do
+      attributes["request_url"] = 'http://www.google.com/search?q=apples'
+      token.request_url.should eq('http://www.google.com/search?q=apples')
+    end
+
+    it "sets request_domain" do
+      attributes["request_domain"] = 'www.google.com'
+      token.request_domain.should eq('www.google.com')
+    end
+
+    it "sets request_path" do
+      attributes["request_path"] = '/search?q=apples'
+      token.request_path.should eq('/search?q=apples')
+    end
+
+    context "missing request_url", :deprecated => true do
+      it "constructs request_url from request_domain and request_path" do
+        attributes["request_domain"] = 'www.google.com'
+        attributes["request_path"] = '/search?q=apples'
+
+        token.request_url.should eq('http://www.google.com/search?q=apples')
+      end
+    end
+
   end
 
   describe "#save" do
+    let(:attributes) { {} }
+    let(:token) { SSO::Token.new(attributes) }
+
+    before do
+      attributes["key"] = "key"
+      attributes["originator_key"] = "originator_key"
+      attributes["request_url"] = "http://example.com"
+      attributes["identity"] = "1234"
+      attributes["session"] = "{}"
+    end
+
     it "inserts new token into list" do
-      token = SSO::Token.new
       token.save
       SSO::Token.find(token.key).should_not be_nil
+    end
+
+    context "preserves" do
+      let(:preserved_token) { token.save; SSO::Token.find(token.key) }
+
+      it { preserved_token.key.should eq("key") }
+      it { preserved_token.originator_key.should eq("originator_key") }
+      it { preserved_token.request_url.should eq("http://example.com") }
+      it { preserved_token.identity.should eq("1234") }
+      it { preserved_token.session.should eq({}) }
     end
   end
 
   describe "#populate" do
     it "populates based on request" do
       token = SSO::Token.new
-      token.populate(mock(:request, host: "www.google.com", fullpath: "/search?q=apples"))
+      token.populate(request)
       token.request_domain.should == "www.google.com"
       token.request_path.should   == "/search?q=apples"
+      token.request_url.should == "http://www.google.com/search?q=apples"
     end
   end
 
   describe "#update" do
     it "updates to match another token" do
-      token = SSO::Token.create(mock(:request, host: "www.google.com", fullpath: "/search?q=apples"))
+      token = SSO::Token.create(request)
       token.identity = 5
 
       new_token = SSO::Token.new
       new_token.update(token)
+      new_token.originator_key.should == token.originator_key
       new_token.request_domain.should == "www.google.com"
       new_token.request_path.should   == "/search?q=apples"
-      new_token.originator_key.should == token.originator_key
+      token.request_url.should == "http://www.google.com/search?q=apples"
     end
   end
 
