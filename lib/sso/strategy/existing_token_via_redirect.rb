@@ -1,8 +1,9 @@
 class SSO::Strategy::ExistingTokenViaRedirect < SSO::Strategy::Base
   def self.should_process?(request)
-    request.path =~ /^\/sso\/auth/
+    sso_auth_url?(request.path)
   end
 
+  # responds to /sso/auth/<key>
   def call(env)
     return invalid_request_token_call(env) if request_token.nil?
     logger :info, "Authenticating session for central domain: #{request.session[:sso_token]}"

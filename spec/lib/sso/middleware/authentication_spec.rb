@@ -7,17 +7,22 @@ describe SSO::Middleware::Authentication do
 
   describe "Normal request" do
     context "Visitor doesn't have a token on the client domain" do
+      let (:token) {
+        SSO::Token.new({
+          "key" => "new_token",
+          "originator_key" => "12345",
+          "request_url" => "http://example.com"
+        })
+      }
       it "redirects to the authenticate url on the central domain with a new token" do
-        valid_token = mock(:token, key: "new_token", originator_key: "12345")
-        SSO::Token.stub!(:create).and_return(valid_token)
+        SSO::Token.stub!(:create).and_return(token)
         get "/"
         last_response.status.should == 302
         last_response.headers["Location"].should == "http://centraldomain.com/sso/auth/new_token"
       end
 
       it "doesn't set current_token" do
-        valid_token = mock(:token, key: "new_token", originator_key: "12345")
-        SSO::Token.stub!(:create).and_return(valid_token)
+        SSO::Token.stub!(:create).and_return(token)
         get "/"
         last_request.env['current_sso_token'].should be_nil
         SSO::Token.current_token.should be_nil
@@ -50,6 +55,26 @@ describe SSO::Middleware::Authentication do
           follow_sso_redirects!
           last_request.params.should eq({ "foo" => "bar" })
           last_request.scheme.should eq("https")
+        end
+
+        it "request /sso/identity, not logged in on central domain" do
+          get "/sso/identity"
+          follow_sso_redirects!
+          last_response.status.should == 401
+          last_response.body.should =~ /You are not logged in/
+        end
+
+        it "request /sso/identity, logged in on central domain" do
+          SSO.on_next_request do |current_token|
+            current_token.identify "123" # mimic logged in user
+          end
+
+          get "/sso/identity"
+
+          follow_sso_redirects!
+
+          last_response.status.should == 200
+          last_response.body.should =~ /You are logged in as User 123/
         end
       end
 

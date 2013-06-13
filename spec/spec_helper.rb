@@ -7,6 +7,8 @@ Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
 require 'rack/test'
 
+SSO.test_mode!
+
 RSpec.configure do |config|
   config.include Rack::Test::Methods
   config.include AppHelper
