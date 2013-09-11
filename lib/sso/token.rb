@@ -12,7 +12,8 @@ class SSO::Token
       ActiveRecord::Base.logger.info("attempting to dismiss dummy token: #{args.inspect}")
     end
 
-    attr_reader :key, :originator_key, :session, :request_domain, :request_path
+    attr_reader :key, :originator_key, :session,
+      :request_domain, :request_path, :request_url
     attr_accessor :identity, :previous_identity
   end
 
@@ -20,7 +21,9 @@ class SSO::Token
 
   cattr_accessor :current_token
 
-  attr_reader :key, :originator_key, :session, :request_domain, :request_path
+  attr_reader :key, :originator_key, :session,
+    :request_domain, :request_path, :request_url
+
   attr_accessor :identity, :previous_identity
 
   def self.find(key)
@@ -100,8 +103,23 @@ class SSO::Token
     @originator_key = attributes["originator_key"] || SecureRandom::hex(50)
     @request_domain = attributes["request_domain"]
     @request_path   = attributes["request_path"]
+    @request_url    = attributes["request_url"]
     @identity       = attributes["identity"]
     @session        = ActiveSupport::JSON.decode(attributes["session"] || "{}")
+  end
+
+  def request_domain
+    warn "[DEPRECATION] SSO::Token#request_domain is deprecated"
+    @request_domain
+  end
+
+  def request_path
+    warn "[DEPRECATION] SSO::Token#request_path is deprecated"
+    @request_path
+  end
+
+  def request_url
+    @request_url ||= attempt_to_reconstruct_url
   end
 
   def save
@@ -113,11 +131,13 @@ class SSO::Token
   end
 
   def populate(request)
+    @request_url    = request.url
     @request_domain = request.host
     @request_path   = request.fullpath
   end
 
   def update(token)
+    @request_url    = token.request_url
     @request_domain = token.request_domain
     @request_path   = token.request_path
     @originator_key = token.originator_key
@@ -210,11 +230,15 @@ class SSO::Token
 
 private
 
+  # TODO - Remove along with request_domain and request_path
+  def attempt_to_reconstruct_url
+    "http://#{request_domain}#{request_path}"
+  end
+
   def to_json
     { key: key,
       originator_key: originator_key,
-      request_domain: request_domain,
-      request_path: request_path,
+      request_url: request_url,
       identity: identity,
       session: session.to_json
     }.to_json

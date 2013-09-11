@@ -1,0 +1,11 @@
+<% if user_signed_in? %>
+  You are logged in as User <%= current_sso_token.identity %>
+  <script type="text/javascript">
+    console.log("You are logged in as <%= current_sso_token.identity %>");
+  </script>
+<% else %>
+  You are not logged in
+  <script type="text/javascript">
+    parent.location = "http://secure.platform.dev/users/login";
+  </script>
+<% end %>

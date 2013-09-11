@@ -53,4 +53,9 @@ module SSO
       end
     end
   end
+
+  def self.request_for_sso_auth_url?(request)
+    request.path =~ /^\/sso\/auth/
+  end
+
 end
