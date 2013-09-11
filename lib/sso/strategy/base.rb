@@ -31,5 +31,14 @@ class SSO::Strategy::Base
     ActiveRecord::Base.logger.send(method, "SSO: #{message}")
   end
 
+  def store_current_sso_token(token, env)
+    SSO::Token.current_token = token
+    env['current_sso_token'] = token
+
+    SSO::Token.run_callbacks(token)
+
+    logger :info, "Request for token: #{token.try(:key)}"
+  end
+
 end
 

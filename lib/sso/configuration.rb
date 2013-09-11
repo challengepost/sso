@@ -1,7 +1,7 @@
 class SSO::Configuration
   include ActiveSupport::Configurable
 
-  config_accessor :central_domain, :skip_paths, :robots, :redis, :default_scope, :passthroughs
+  config_accessor :central_domain, :skip_paths, :robots, :redis, :default_scope, :passthroughs, :disable_redirect
 
   # checks the user agent against a list of bots
   # http://gurge.com/blog/2007/01/08/turn-off-rails-sessions-for-robots/
@@ -34,6 +34,14 @@ class SSO::Configuration
     config.passthroughs ||= []
   end
 
+  def disable_redirect
+    config.disable_redirect ||= false
+  end
+
+  def disable_redirect?
+    !!disable_redirect
+  end
+
   def reset!
     config.redis = nil
     config.robots = nil
@@ -41,6 +49,7 @@ class SSO::Configuration
     config.default_scope = nil
     config.central_domain = nil
     config.passthrough_methods = nil
+    config.disable_redirect = nil
   end
 
 end
