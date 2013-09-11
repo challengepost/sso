@@ -100,7 +100,7 @@ describe SSO::Middleware::Authentication do
 
     context "valid sso parameter is present" do
       before do
-        @token = SSO::Token.create(mock(:request, host: "example.com", fullpath: "/"))
+        @token = SSO::Token.create(mock(:request, scheme: 'https', host: "example.com", fullpath: "/"))
         @session[:originator_key] = @token.originator_key
         set_cookie @session.to_s
       end
@@ -115,7 +115,7 @@ describe SSO::Middleware::Authentication do
         get "/?sso=#{@token.key}"
 
         last_response.status.should == 302
-        last_response.headers["Location"].should == "http://example.com/"
+        last_response.headers["Location"].should == "https://example.com/"
       end
 
       it "doesn't set current_token" do
@@ -200,7 +200,7 @@ describe SSO::Middleware::Authentication do
   describe "Auth requests" do
     context "token is valid" do
       before do
-        @token = SSO::Token.create(mock(:request, host: "example.com", fullpath: "/some/path"))
+        @token = SSO::Token.create(mock(:request, scheme: 'http', host: "example.com", fullpath: "/some/path"))
 
         get "/sso/auth/#{@token.key}"
       end
@@ -242,11 +242,11 @@ describe SSO::Middleware::Authentication do
 
     context "Visitor has an existing token on the central domain" do
       before do
-        @existing_token = SSO::Token.create(mock(:request, host: "example.com", fullpath: "/some/path"))
+        @existing_token = SSO::Token.create(mock(:request, scheme: 'http', host: "example.com", fullpath: "/some/path"))
         @session[:sso_token] = @existing_token.key
         set_cookie @session.to_s
 
-        @token = SSO::Token.create(mock(:request, host: "anotherexample.com", fullpath: "/some/other/path"))
+        @token = SSO::Token.create(mock(:request, scheme: nil, host: "anotherexample.com", fullpath: "/some/other/path"))
         get "/sso/auth/#{@token.key}"
       end
 
