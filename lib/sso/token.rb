@@ -12,7 +12,7 @@ class SSO::Token
       ActiveRecord::Base.logger.info("attempting to dismiss dummy token: #{args.inspect}")
     end
 
-    attr_reader :key, :originator_key, :session, :request_domain, :request_path
+    attr_reader :key, :originator_key, :session, :request_scheme, :request_domain, :request_path
     attr_accessor :identity, :previous_identity
   end
 
@@ -98,6 +98,7 @@ class SSO::Token
   def initialize(attributes = {})
     @key            = attributes["key"] || SecureRandom::hex(50)
     @originator_key = attributes["originator_key"] || SecureRandom::hex(50)
+    @request_scheme = attributes["request_scheme"]
     @request_domain = attributes["request_domain"]
     @request_path   = attributes["request_path"]
     @identity       = attributes["identity"]
@@ -113,15 +114,21 @@ class SSO::Token
   end
 
   def populate(request)
+    @request_scheme = request.scheme
     @request_domain = request.host
     @request_path   = request.fullpath
   end
 
   def update(token)
+    @request_scheme = token.request_scheme
     @request_domain = token.request_domain
     @request_path   = token.request_path
     @originator_key = token.originator_key
     save
+  end
+
+  def request_scheme
+    @request_scheme || 'http'
   end
 
   def destroy
@@ -215,6 +222,7 @@ private
       originator_key: originator_key,
       request_domain: request_domain,
       request_path: request_path,
+      request_scheme: request_scheme,
       identity: identity,
       session: session.to_json
     }.to_json
