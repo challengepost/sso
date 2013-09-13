@@ -14,7 +14,7 @@ class SSO::Strategy::ExistingTokenViaSession < SSO::Strategy::Base
   end
 
   def call(env)
-    store_current_sso_token current_sso_token, env
+    set_current_sso_token current_sso_token, env
     app.call(env)
   end
 

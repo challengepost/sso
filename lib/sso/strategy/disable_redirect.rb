@@ -4,13 +4,13 @@ class SSO::Strategy::DisableRedirect < SSO::Strategy::Base
   end
 
   def call(env)
-    store_current_sso_token current_sso_token, env
+    set_current_sso_token find_or_create_sso_token, env
     app.call(env)
   end
 
   private
 
-  def current_sso_token
+  def find_or_create_sso_token
     @current_sso_token ||= find_token || create_token
   end
 
