@@ -14,14 +14,7 @@ class SSO::Strategy::ExistingTokenViaSession < SSO::Strategy::Base
   end
 
   def call(env)
-    # TODO
-    # Deprecate SSO::Token.current_token
-    SSO::Token.current_token = current_sso_token
-    env['current_sso_token'] = current_sso_token
-
-    SSO::Token.run_callbacks(current_sso_token)
-
-    logger :info, "Request for token: #{current_sso_token.try(:key)}"
+    set_current_sso_token current_sso_token, env
     app.call(env)
   end
 

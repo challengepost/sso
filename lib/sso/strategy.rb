@@ -3,10 +3,11 @@ module SSO
     extend ActiveSupport::Autoload
 
     autoload :Base
-    autoload :Skip
+    autoload :DisableRedirect
     autoload :ExistingTokenViaRedirect
     autoload :ExistingTokenViaParam
     autoload :ExistingTokenViaSession
     autoload :NewToken
+    autoload :Skip
   end
 end

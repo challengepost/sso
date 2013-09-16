@@ -2,6 +2,7 @@ class SSO::Middleware::Authentication
 
   SSO_STRATEGIES = [
     SSO::Strategy::Skip,
+    SSO::Strategy::DisableRedirect,
     SSO::Strategy::ExistingTokenViaRedirect,
     SSO::Strategy::ExistingTokenViaParam,
     SSO::Strategy::ExistingTokenViaSession,
